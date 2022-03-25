@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 )
@@ -14,18 +15,24 @@ type Ecsta struct {
 	region string
 	ecs    *ecs.Client
 	w      io.Writer
+
+	config *Config
 }
 
 func New(ctx context.Context, region string) (*Ecsta, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+	awscfg, err := awsConfig.LoadDefaultConfig(ctx, config.WithRegion(region))
 	if err != nil {
 		return nil, err
 	}
-
+	conf, err := newConfig()
+	if err != nil {
+		return nil, err
+	}
 	return &Ecsta{
-		region: cfg.Region,
-		ecs:    ecs.NewFromConfig(cfg),
+		region: awscfg.Region,
+		ecs:    ecs.NewFromConfig(awscfg),
 		w:      os.Stdout,
+		config: conf,
 	}, nil
 }
 

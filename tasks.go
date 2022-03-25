@@ -1,6 +1,7 @@
 package ecsta
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -35,44 +36,58 @@ func (p *TasksCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.output, "output", "table", "output format (table|json|tsv)")
 }
 
+func (p *TasksCmd) selectCluster(ctx context.Context) (string, error) {
+	clusters, err := p.app.listClusters(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to list clusters: %w", err)
+	}
+	buf := new(bytes.Buffer)
+	for _, cluster := range clusters {
+		fmt.Fprintln(buf, arnToName(cluster))
+	}
+	res, err := p.app.runFilter(buf, p.output)
+	if err != nil {
+		return "", fmt.Errorf("failed to run filter: %w", err)
+	}
+	return res, nil
+}
+
+func (p *TasksCmd) execute(ctx context.Context, cluster string) error {
+	tasks, err := p.app.listTasks(ctx, &optionListTasks{
+		cluster: &cluster,
+		family:  optional(p.family),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to list tasks in cluster %s: %w", cluster, err)
+	}
+	f, _ := newTaskFormatter(p.output, p.app.w)
+	for _, task := range tasks {
+		f.AddTask(task)
+	}
+	f.Close()
+	return nil
+}
+
 func (p *TasksCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	args := f.Args()
-	if len(args) > 1 {
-		f.Usage()
+	switch len(args) {
+	case 0:
+		cluster, err := p.selectCluster(ctx)
+		if err != nil {
+			log.Println("[error]", err)
+			return subcommands.ExitFailure
+		}
+		if err := p.execute(ctx, cluster); err != nil {
+			log.Println("[error]", err)
+			return subcommands.ExitFailure
+		}
+	case 1:
+		if err := p.execute(ctx, args[0]); err != nil {
+			log.Println("[error]", err)
+			return subcommands.ExitFailure
+		}
+	default:
 		return subcommands.ExitUsageError
 	}
-	err := func() error {
-		switch len(args) {
-		case 0:
-			clusters, err := p.app.listClusters(ctx)
-			if err != nil {
-				return fmt.Errorf("failed to list clusters: %w", err)
-			}
-			for _, cluster := range clusters {
-				fmt.Fprintln(p.app.w, cluster)
-			}
-		case 1:
-			cluster := args[0]
-			tasks, err := p.app.listTasks(ctx, &optionListTasks{
-				cluster: &cluster,
-				family:  optional(p.family),
-			})
-			if err != nil {
-				return fmt.Errorf("failed to list tasks in cluster %s: %w", cluster, err)
-			}
-			f, _ := newTaskFormatter(p.output, p.app.w)
-			for _, task := range tasks {
-				f.AddTask(task)
-			}
-			f.Close()
-		default:
-			panic("invalid number of arguments")
-		}
-		return nil
-	}()
-	if err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitSuccess
+	return subcommands.ExitFailure
 }
