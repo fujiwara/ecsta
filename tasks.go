@@ -32,11 +32,11 @@ func (p *TasksCmd) SetFlags(f *flag.FlagSet) {
 	f.BoolVar(&p.capitalize, "capitalize", false, "capitalize output")
 }
 
-func (p *TasksCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (p *TasksCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	args := f.Args()
 	switch len(args) {
 	case 0:
-		clusters, err := p.app.listClusters()
+		clusters, err := p.app.listClusters(ctx)
 		if err != nil {
 			panic(err)
 		}
@@ -44,7 +44,7 @@ func (p *TasksCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface{})
 			fmt.Println(cluster)
 		}
 	case 1:
-		tasks, err := p.app.listTasks(args[0])
+		tasks, err := p.app.listTasks(ctx, args[0])
 		if err != nil {
 			panic(err)
 		}

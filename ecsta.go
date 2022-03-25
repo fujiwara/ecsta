@@ -10,7 +10,6 @@ import (
 
 type Ecsta struct {
 	region string
-	ctx    context.Context
 	ecs    *ecs.Client
 }
 
@@ -22,23 +21,22 @@ func New(ctx context.Context, region string) (*Ecsta, error) {
 
 	return &Ecsta{
 		region: cfg.Region,
-		ctx:    ctx,
 		ecs:    ecs.NewFromConfig(cfg),
 	}, nil
 }
 
-func (app *Ecsta) listTasks(cluster string) ([]types.Task, error) {
+func (app *Ecsta) listTasks(ctx context.Context, cluster string) ([]types.Task, error) {
 	tasks := []types.Task{}
 	tp := ecs.NewListTasksPaginator(app.ecs, &ecs.ListTasksInput{Cluster: &cluster})
 	for tp.HasMorePages() {
-		to, err := tp.NextPage(app.ctx)
+		to, err := tp.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
 		if len(to.TaskArns) == 0 {
 			continue
 		}
-		out, err := app.ecs.DescribeTasks(app.ctx, &ecs.DescribeTasksInput{
+		out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
 			Cluster: &cluster,
 			Tasks:   to.TaskArns,
 		})
@@ -52,11 +50,11 @@ func (app *Ecsta) listTasks(cluster string) ([]types.Task, error) {
 	return tasks, nil
 }
 
-func (app *Ecsta) listClusters() ([]string, error) {
+func (app *Ecsta) listClusters(ctx context.Context) ([]string, error) {
 	clusters := []string{}
 	tp := ecs.NewListClustersPaginator(app.ecs, &ecs.ListClustersInput{})
 	for tp.HasMorePages() {
-		out, err := tp.NextPage(app.ctx)
+		out, err := tp.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
