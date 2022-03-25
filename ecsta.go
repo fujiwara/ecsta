@@ -2,6 +2,8 @@ package ecsta
 
 import (
 	"context"
+	"io"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
@@ -11,6 +13,7 @@ import (
 type Ecsta struct {
 	region string
 	ecs    *ecs.Client
+	w      io.Writer
 }
 
 func New(ctx context.Context, region string) (*Ecsta, error) {
@@ -22,12 +25,26 @@ func New(ctx context.Context, region string) (*Ecsta, error) {
 	return &Ecsta{
 		region: cfg.Region,
 		ecs:    ecs.NewFromConfig(cfg),
+		w:      os.Stdout,
 	}, nil
 }
 
-func (app *Ecsta) listTasks(ctx context.Context, cluster string) ([]types.Task, error) {
+type optionListTasks struct {
+	cluster *string
+	family  *string
+	service *string
+}
+
+func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
-	tp := ecs.NewListTasksPaginator(app.ecs, &ecs.ListTasksInput{Cluster: &cluster})
+	tp := ecs.NewListTasksPaginator(
+		app.ecs,
+		&ecs.ListTasksInput{
+			Cluster:     opt.cluster,
+			Family:      opt.family,
+			ServiceName: opt.service,
+		},
+	)
 	for tp.HasMorePages() {
 		to, err := tp.NextPage(ctx)
 		if err != nil {
@@ -37,8 +54,9 @@ func (app *Ecsta) listTasks(ctx context.Context, cluster string) ([]types.Task, 
 			continue
 		}
 		out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
-			Cluster: &cluster,
+			Cluster: opt.cluster,
 			Tasks:   to.TaskArns,
+			Include: []types.TaskField{"TAGS"},
 		})
 		if err != nil {
 			return nil, err
