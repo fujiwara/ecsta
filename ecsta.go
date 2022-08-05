@@ -2,14 +2,16 @@ package ecsta
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 )
+
+var ErrAborted = errors.New("Aborted")
 
 type Ecsta struct {
 	region string
@@ -20,7 +22,7 @@ type Ecsta struct {
 }
 
 func New(ctx context.Context, region string) (*Ecsta, error) {
-	awscfg, err := awsConfig.LoadDefaultConfig(ctx, config.WithRegion(region))
+	awscfg, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithRegion(region))
 	if err != nil {
 		return nil, err
 	}
