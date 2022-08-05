@@ -25,6 +25,7 @@ func main() {
 	subcommands.Register(ecsta.NewListCmd(app), "")
 	subcommands.Register(ecsta.NewDescribeCmd(app), "")
 	subcommands.Register(ecsta.NewExecCmd(app), "")
+	subcommands.Register(ecsta.NewPortforwardCmd(app), "")
 	subcommands.Register(ecsta.NewStopCmd(app), "")
 
 	os.Exit(int(subcommands.Execute(ctx)))

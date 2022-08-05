@@ -12,6 +12,7 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
 var ErrAborted = errors.New("Aborted")
@@ -21,6 +22,7 @@ type Ecsta struct {
 	cluster string
 
 	ecs *ecs.Client
+	ssm *ssm.Client
 	w   io.Writer
 
 	config *Config
@@ -39,6 +41,7 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 		cluster: cluster,
 		region:  awscfg.Region,
 		ecs:     ecs.NewFromConfig(awscfg),
+		ssm:     ssm.NewFromConfig(awscfg),
 		w:       os.Stdout,
 		config:  conf,
 	}
