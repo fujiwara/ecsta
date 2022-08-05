@@ -14,14 +14,19 @@ func main() {
 	subcommands.Register(subcommands.FlagsCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 
-	app, err := ecsta.New(context.Background(), os.Getenv("AWS_REGION"))
+	ctx := context.Background()
+	var region, cluster string
+	flag.StringVar(&cluster, "cluster", "", "ECS cluster name")
+	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "AWS region")
+	flag.Parse()
+
+	app, err := ecsta.New(ctx, region, cluster)
 	if err != nil {
 		panic(err)
 	}
+	subcommands.Register(ecsta.NewListCmd(app), "")
+	subcommands.Register(ecsta.NewDescribeCmd(app), "")
+	subcommands.Register(ecsta.NewStopCmd(app), "")
 
-	subcommands.Register(ecsta.NewTasksCmd(app), "")
-
-	flag.Parse()
-	ctx := context.Background()
 	os.Exit(int(subcommands.Execute(ctx)))
 }

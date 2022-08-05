@@ -111,6 +111,7 @@ func (t *taskFormatterJSON) AddTask(task types.Task) {
 	bb := new(bytes.Buffer)
 	json.Indent(bb, b, "", "  ")
 	t.w.Write(bb.Bytes())
+	t.w.Write([]byte("\n"))
 }
 
 func (t *taskFormatterJSON) Close() {
