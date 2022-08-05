@@ -184,3 +184,31 @@ func (app *Ecsta) SetCluster(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (app *Ecsta) Endpoint(ctx context.Context) (string, error) {
+	out, err := app.ecs.DiscoverPollEndpoint(ctx, &ecs.DiscoverPollEndpointInput{
+		Cluster: &app.cluster,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to discover poll endpoint: %w", err)
+	}
+	return *out.Endpoint, nil
+}
+
+func (app *Ecsta) findContainerName(ctx context.Context, task types.Task, name string) (string, error) {
+	if name != "" {
+		return name, nil
+	}
+	if len(task.Containers) == 1 {
+		return *task.Containers[0].Name, nil
+	}
+	containerNames := make([]string, 0, len(task.Containers))
+	for _, container := range task.Containers {
+		containerNames = append(containerNames, *container.Name)
+	}
+	container, err := app.selectByFilter(ctx, containerNames)
+	if err != nil {
+		return "", err
+	}
+	return container, nil
+}

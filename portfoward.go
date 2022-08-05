@@ -14,9 +14,7 @@ import (
 	"github.com/google/subcommands"
 )
 
-const SessionManagerPluginBinary = "session-manager-plugin"
-
-type ExecCmd struct {
+type PortfowardCmd struct {
 	app *Ecsta
 
 	id        string
@@ -24,27 +22,27 @@ type ExecCmd struct {
 	command   string
 }
 
-func NewExecCmd(app *Ecsta) *ExecCmd {
-	return &ExecCmd{
+func NewPortfowardCmd(app *Ecsta) *PortfowardCmd {
+	return &PortfowardCmd{
 		app: app,
 	}
 }
 
-func (*ExecCmd) Name() string     { return "exec" }
-func (*ExecCmd) Synopsis() string { return "exec task" }
-func (*ExecCmd) Usage() string {
+func (*PortfowardCmd) Name() string     { return "exec" }
+func (*PortfowardCmd) Synopsis() string { return "exec task" }
+func (*PortfowardCmd) Usage() string {
 	return `exec [options]:
   ECS Exec task in a cluster.
 `
 }
 
-func (p *ExecCmd) SetFlags(f *flag.FlagSet) {
+func (p *PortfowardCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.id, "id", "", "task ID")
 	f.StringVar(&p.command, "command", "sh", "command")
 	f.StringVar(&p.container, "container", "", "container name")
 }
 
-func (p *ExecCmd) execute(ctx context.Context) error {
+func (p *PortfowardCmd) execute(ctx context.Context) error {
 	if err := p.app.SetCluster(ctx); err != nil {
 		return err
 	}
@@ -53,11 +51,21 @@ func (p *ExecCmd) execute(ctx context.Context) error {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
 
-	name, err := p.app.findContainerName(ctx, task, p.container)
-	if err != nil {
-		return fmt.Errorf("failed to select containers: %w", err)
+	if p.container == "" {
+		if len(task.Containers) == 1 {
+			p.container = *task.Containers[0].Name
+		} else {
+			containerNames := make([]string, 0, len(task.Containers))
+			for _, container := range task.Containers {
+				containerNames = append(containerNames, *container.Name)
+			}
+			container, err := p.app.selectByFilter(ctx, containerNames)
+			if err != nil {
+				return err
+			}
+			p.container = container
+		}
 	}
-	p.container = name
 
 	out, err := p.app.ecs.ExecuteCommand(ctx, &ecs.ExecuteCommandInput{
 		Cluster:     task.ClusterArn,
@@ -96,7 +104,7 @@ func (p *ExecCmd) execute(ctx context.Context) error {
 	return cmd.Run()
 }
 
-func (p *ExecCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
+func (p *PortfowardCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
 	if err := p.execute(ctx); err != nil {
 		log.Println("[error]", err)
 		return subcommands.ExitFailure
