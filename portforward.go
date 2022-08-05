@@ -48,6 +48,13 @@ func (p *PortforwardCmd) SetFlags(f *flag.FlagSet) {
 }
 
 func (p *PortforwardCmd) execute(ctx context.Context) error {
+	if p.remotePort == 0 {
+		return fmt.Errorf("--port is required")
+	}
+	if p.localPort == 0 {
+		return fmt.Errorf("--localport is required")
+	}
+
 	if err := p.app.SetCluster(ctx); err != nil {
 		return err
 	}
@@ -61,10 +68,6 @@ func (p *PortforwardCmd) execute(ctx context.Context) error {
 		return fmt.Errorf("failed to select containers: %w", err)
 	}
 	p.container = name
-
-	if p.remotePort == 0 {
-		return fmt.Errorf("--port is required")
-	}
 
 	ssmReq, err := buildSsmRequestParameters(task, p.container)
 	if err != nil {
