@@ -10,9 +10,7 @@ import (
 )
 
 func main() {
-	subcommands.Register(subcommands.HelpCommand(), "")
 	subcommands.Register(subcommands.FlagsCommand(), "")
-	subcommands.Register(subcommands.CommandsCommand(), "")
 
 	ctx := context.Background()
 	var region, cluster string
@@ -26,6 +24,7 @@ func main() {
 	}
 	subcommands.Register(ecsta.NewListCmd(app), "")
 	subcommands.Register(ecsta.NewDescribeCmd(app), "")
+	subcommands.Register(ecsta.NewExecCmd(app), "")
 	subcommands.Register(ecsta.NewStopCmd(app), "")
 
 	os.Exit(int(subcommands.Execute(ctx)))

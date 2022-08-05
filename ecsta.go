@@ -129,6 +129,18 @@ func (app *Ecsta) selectCluster(ctx context.Context) (string, error) {
 	return res, nil
 }
 
+func (app *Ecsta) selectByFilter(ctx context.Context, src []string) (string, error) {
+	buf := new(bytes.Buffer)
+	for _, s := range src {
+		fmt.Fprintln(buf, s)
+	}
+	res, err := app.runFilter(buf, "")
+	if err != nil {
+		return "", fmt.Errorf("failed to run filter: %w", err)
+	}
+	return res, nil
+}
+
 func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 	if id != "" {
 		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{id}})
