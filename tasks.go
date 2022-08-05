@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/google/subcommands"
 )
 
@@ -16,6 +17,7 @@ type TasksCmd struct {
 	cluster string
 	family  string
 	output  string
+	id      string
 }
 
 func NewTasksCmd(app *Ecsta) *TasksCmd {
@@ -36,6 +38,7 @@ func (p *TasksCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.cluster, "cluster", "", "ECS cluster name")
 	f.StringVar(&p.family, "family", "", "task definition family")
 	f.StringVar(&p.output, "output", "table", "output format (table|json|tsv)")
+	f.StringVar(&p.id, "id", "", "task ID")
 }
 
 func (p *TasksCmd) selectCluster(ctx context.Context) (string, error) {
@@ -55,10 +58,19 @@ func (p *TasksCmd) selectCluster(ctx context.Context) (string, error) {
 }
 
 func (p *TasksCmd) execute(ctx context.Context) error {
-	tasks, err := p.app.listTasks(ctx, &optionListTasks{
-		cluster: &p.cluster,
-		family:  optional(p.family),
-	})
+	var tasks []types.Task
+	var err error
+	if p.id != "" {
+		tasks, err = p.app.describeTasks(ctx, &optionDescribeTasks{
+			cluster: &p.cluster,
+			ids:     []string{p.id},
+		})
+	} else {
+		tasks, err = p.app.listTasks(ctx, &optionListTasks{
+			cluster: &p.cluster,
+			family:  optional(p.family),
+		})
+	}
 	if err != nil {
 		return fmt.Errorf("failed to list tasks in cluster %s: %w", p.cluster, err)
 	}

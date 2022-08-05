@@ -42,6 +42,23 @@ type optionListTasks struct {
 	service *string
 }
 
+type optionDescribeTasks struct {
+	cluster *string
+	ids     []string
+}
+
+func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) ([]types.Task, error) {
+	out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
+		Cluster: opt.cluster,
+		Tasks:   opt.ids,
+		Include: []types.TaskField{"TAGS"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out.Tasks, nil
+}
+
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
 	tp := ecs.NewListTasksPaginator(
@@ -68,9 +85,7 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 		if err != nil {
 			return nil, err
 		}
-		for _, task := range out.Tasks {
-			tasks = append(tasks, task)
-		}
+		tasks = append(tasks, out.Tasks...)
 	}
 	return tasks, nil
 }
