@@ -13,12 +13,12 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func newTaskFormatter(t string, w io.Writer) (taskFormatter, error) {
+func newTaskFormatter(w io.Writer, t string, hasHeader bool) (taskFormatter, error) {
 	switch t {
 	case "table":
-		return newTaskFormatterTable(w), nil
+		return newTaskFormatterTable(w, hasHeader), nil
 	case "tsv":
-		return newTaskFormatterTSV(w, true), nil
+		return newTaskFormatterTSV(w, hasHeader), nil
 	case "json":
 		return newTaskFormatterJSON(w), nil
 	default:
@@ -59,11 +59,13 @@ type taskFormatterTable struct {
 	table *tablewriter.Table
 }
 
-func newTaskFormatterTable(w io.Writer) *taskFormatterTable {
+func newTaskFormatterTable(w io.Writer, hasHeader bool) *taskFormatterTable {
 	t := &taskFormatterTable{
 		table: tablewriter.NewWriter(w),
 	}
-	t.table.SetHeader(taskFormatterColumns)
+	if hasHeader {
+		t.table.SetHeader(taskFormatterColumns)
+	}
 	t.table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	return t
 }
