@@ -25,7 +25,7 @@ type Ecsta struct {
 	ssm *ssm.Client
 	w   io.Writer
 
-	config *Config
+	config Config
 }
 
 func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
@@ -33,7 +33,7 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 	if err != nil {
 		return nil, err
 	}
-	conf, err := newConfig()
+	conf, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}

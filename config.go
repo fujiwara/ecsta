@@ -3,14 +3,48 @@ package ecsta
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/google/go-jsonnet"
+	"github.com/Songmu/prompter"
 )
 
-type Config struct {
-	FilterCommand string `json:"filter_command"`
+type Config map[string]string
+
+func (c Config) String() string {
+	b, _ := json.MarshalIndent(c, "", "  ")
+	return string(b)
+}
+
+func (c Config) Get(name string) (string, error) {
+	for _, elm := range ConfigElements {
+		if elm.Name == name {
+			return c[name], nil
+		}
+	}
+	return "", fmt.Errorf("config element %s not defined", name)
+}
+
+func (c Config) Set(name, value string) error {
+	for _, elm := range ConfigElements {
+		if elm.Name == name {
+			c[name] = value
+		}
+	}
+	return fmt.Errorf("config element %s not defined", name)
+}
+
+type ConfigElement struct {
+	Name        string `json:"name"`
+	Description string `json:"help"`
+}
+
+var ConfigElements = []ConfigElement{
+	{
+		Name:        "filter_command",
+		Description: "command to run to filter messages",
+	},
 }
 
 var configDir string
@@ -29,19 +63,68 @@ func init() {
 	}
 }
 
-func newConfig() (*Config, error) {
-	vm := jsonnet.MakeVM()
-	p := filepath.Join(configDir, "config")
-	if _, err := os.Stat(p); os.IsNotExist(err) {
-		return &Config{}, nil
+func configFilePath() string {
+	return filepath.Join(configDir, "config.json")
+}
+
+func loadConfig() (Config, error) {
+	if config, err := loadConfigFile(); err == nil {
+		return config, nil
 	}
-	jsonStr, err := vm.EvaluateFile(p)
+	return Config{}, nil
+}
+
+func loadConfigFile() (Config, error) {
+	p := configFilePath()
+	jsonStr, err := os.ReadFile(p)
 	if err != nil {
-		return nil, fmt.Errorf("failed to evaluate %s: %w", p, err)
+		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	var c Config
-	if err := json.Unmarshal([]byte(jsonStr), &c); err != nil {
+	var config Config
+	if err := json.Unmarshal([]byte(jsonStr), &config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %w", p, err)
 	}
-	return &c, nil
+	return config, nil
+}
+
+func reConfigure(config Config) error {
+	log.Println("configuration file:", configFilePath())
+	newConfig := Config{}
+
+	for _, elm := range ConfigElements {
+		current, _ := config.Get(elm.Name)
+		input := prompter.Prompt(
+			fmt.Sprintf("Enter %s (%s)", elm.Name, elm.Description),
+			current,
+		)
+		newConfig.Set(elm.Name, input)
+	}
+	return saveConfig(newConfig)
+}
+
+func saveConfig(config Config) error {
+	p := configFilePath()
+	if _, err := os.Stat(configDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(configDir, 0755); err != nil {
+				return fmt.Errorf("failed to create config directory: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to stat config directory: %w", err)
+		}
+	}
+	b, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %w", err)
+	}
+	if _, err := os.Stat(p); err == nil {
+		if err := os.Rename(p, p+".bak"); err != nil {
+			return fmt.Errorf("failed to backup config: %w", err)
+		}
+	}
+	if err := os.WriteFile(p, b, 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+	log.Println("Saved configuration file:", configFilePath())
+	return nil
 }

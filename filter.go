@@ -13,8 +13,10 @@ import (
 )
 
 func (app *Ecsta) runFilter(src io.Reader, title string) (string, error) {
-	command := app.config.FilterCommand
-	if command == "" {
+	command, err := app.config.Get("filter_command")
+	if err != nil {
+		return "", err
+	} else if command == "" {
 		return runInternalFilter(src, title)
 	}
 	var f *exec.Cmd
