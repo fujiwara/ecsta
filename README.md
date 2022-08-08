@@ -2,6 +2,10 @@
 
 ecsta is a "ECS Task Assistant" tool.
 
+## Product status
+
+alpha quality.
+
 ## Install
 
 ### Homebrew
