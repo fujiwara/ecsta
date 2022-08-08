@@ -32,7 +32,7 @@ func (*ListCmd) Usage() string {
 
 func (p *ListCmd) SetFlags(f *flag.FlagSet) {
 	f.StringVar(&p.family, "family", "", "task definition family")
-	f.StringVar(&p.output, "output", "table", "output format (table|json|tsv)")
+	f.StringVar(&p.output, "output", p.app.config.Get("output"), "output format (table|json|tsv)")
 }
 
 func (p *ListCmd) execute(ctx context.Context) error {

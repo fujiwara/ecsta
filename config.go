@@ -17,22 +17,23 @@ func (c Config) String() string {
 	return string(b)
 }
 
-func (c Config) Get(name string) (string, error) {
+func (c Config) Get(name string) string {
 	for _, elm := range ConfigElements {
 		if elm.Name == name {
-			return c[name], nil
+			return c[name]
 		}
 	}
-	return "", fmt.Errorf("config element %s not defined", name)
+	panic(fmt.Errorf("config element %s not defined", name))
 }
 
-func (c Config) Set(name, value string) error {
+func (c Config) Set(name, value string) {
 	for _, elm := range ConfigElements {
 		if elm.Name == name {
 			c[name] = value
+			return
 		}
 	}
-	return fmt.Errorf("config element %s not defined", name)
+	panic(fmt.Errorf("config element %s not defined", name))
 }
 
 type ConfigElement struct {
@@ -44,6 +45,10 @@ var ConfigElements = []ConfigElement{
 	{
 		Name:        "filter_command",
 		Description: "command to run to filter messages",
+	},
+	{
+		Name:        "output",
+		Description: "output format (table, tsv or json)",
 	},
 }
 
@@ -92,7 +97,7 @@ func reConfigure(config Config) error {
 	newConfig := Config{}
 
 	for _, elm := range ConfigElements {
-		current, _ := config.Get(elm.Name)
+		current := config.Get(elm.Name)
 		input := prompter.Prompt(
 			fmt.Sprintf("Enter %s (%s)", elm.Name, elm.Description),
 			current,

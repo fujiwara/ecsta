@@ -125,19 +125,19 @@ func (app *Ecsta) selectCluster(ctx context.Context) (string, error) {
 	for _, cluster := range clusters {
 		fmt.Fprintln(buf, arnToName(cluster))
 	}
-	res, err := app.runFilter(buf, "")
+	res, err := app.runFilter(buf, "cluster name")
 	if err != nil {
 		return "", fmt.Errorf("failed to run filter: %w", err)
 	}
 	return res, nil
 }
 
-func (app *Ecsta) selectByFilter(ctx context.Context, src []string) (string, error) {
+func (app *Ecsta) selectByFilter(ctx context.Context, src []string, title string) (string, error) {
 	buf := new(bytes.Buffer)
 	for _, s := range src {
 		fmt.Fprintln(buf, s)
 	}
-	res, err := app.runFilter(buf, "")
+	res, err := app.runFilter(buf, title)
 	if err != nil {
 		return "", fmt.Errorf("failed to run filter: %w", err)
 	}
@@ -164,7 +164,7 @@ func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 		f.AddTask(task)
 	}
 	f.Close()
-	res, err := app.runFilter(buf, "")
+	res, err := app.runFilter(buf, "task ID")
 	if err != nil {
 		return types.Task{}, fmt.Errorf("failed to run filter: %w", err)
 	}
@@ -209,7 +209,7 @@ func (app *Ecsta) findContainerName(ctx context.Context, task types.Task, name s
 	for _, container := range task.Containers {
 		containerNames = append(containerNames, *container.Name)
 	}
-	container, err := app.selectByFilter(ctx, containerNames)
+	container, err := app.selectByFilter(ctx, containerNames, "container name")
 	if err != nil {
 		return "", err
 	}

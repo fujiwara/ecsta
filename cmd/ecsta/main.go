@@ -14,7 +14,7 @@ func main() {
 
 	ctx := context.Background()
 	var region, cluster string
-	flag.StringVar(&cluster, "cluster", "", "ECS cluster name")
+	flag.StringVar(&cluster, "cluster", os.Getenv("ECS_CLUSTER"), "ECS cluster name")
 	flag.StringVar(&region, "region", os.Getenv("AWS_REGION"), "AWS region")
 	flag.Parse()
 
