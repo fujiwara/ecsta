@@ -125,6 +125,21 @@ stop [options]:
         task ID
 ```
 
+### Trace task
+
+Run [tracer](https://github.com/fujiwara/tracer). No need to install `tracer` command.
+
+```
+trace [options]:
+  Trace task in a cluster.
+  -duration duration
+        duration (default 5m0s)
+  -id string
+        task ID
+  -sns-topic-arn string
+        SNS topic ARN
+```
+
 ## LICENSE
 
 [MIT](LICENSE)
