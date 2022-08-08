@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
@@ -21,9 +22,10 @@ type Ecsta struct {
 	region  string
 	cluster string
 
-	ecs *ecs.Client
-	ssm *ssm.Client
-	w   io.Writer
+	awscfg aws.Config
+	ecs    *ecs.Client
+	ssm    *ssm.Client
+	w      io.Writer
 
 	config Config
 }
@@ -40,6 +42,7 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 	app := &Ecsta{
 		cluster: cluster,
 		region:  awscfg.Region,
+		awscfg:  awscfg,
 		ecs:     ecs.NewFromConfig(awscfg),
 		ssm:     ssm.NewFromConfig(awscfg),
 		w:       os.Stdout,
