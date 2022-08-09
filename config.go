@@ -39,16 +39,19 @@ func (c Config) Set(name, value string) {
 type ConfigElement struct {
 	Name        string `json:"name"`
 	Description string `json:"help"`
+	Default     string `json:"default"`
 }
 
 var ConfigElements = []ConfigElement{
 	{
 		Name:        "filter_command",
 		Description: "command to run to filter messages",
+		Default:     "",
 	},
 	{
 		Name:        "output",
 		Description: "output format (table, tsv or json)",
+		Default:     "table",
 	},
 }
 
@@ -68,15 +71,30 @@ func init() {
 	}
 }
 
+func newConfig() Config {
+	config := Config{}
+	config.fillDefault()
+	return config
+}
+
 func configFilePath() string {
 	return filepath.Join(configDir, "config.json")
 }
 
 func loadConfig() (Config, error) {
 	if config, err := loadConfigFile(); err == nil {
+		config.fillDefault()
 		return config, nil
 	}
-	return Config{}, nil
+	return newConfig(), nil
+}
+
+func (config Config) fillDefault() {
+	for _, elm := range ConfigElements {
+		if config[elm.Name] == "" && elm.Default != "" {
+			config[elm.Name] = elm.Default
+		}
+	}
 }
 
 func loadConfigFile() (Config, error) {

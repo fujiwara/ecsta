@@ -2,53 +2,49 @@ package ecsta
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 
-	"github.com/google/subcommands"
+	"github.com/urfave/cli/v2"
 )
 
-type ConfigureCmd struct {
-	app *Ecsta
-
-	show bool
+type ConfigureOption struct {
+	Show bool
 }
 
-func NewConfigureCmd(app *Ecsta) *ConfigureCmd {
-	return &ConfigureCmd{
-		app: app,
+func newConfigureCommand() *cli.Command {
+	cmd := &cli.Command{
+		Name:  "configure",
+		Usage: "Create a configuration file of ecsta",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "show",
+				Aliases: []string{"s"},
+				Usage:   "show a current configuration",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app, err := NewFromCLI(c)
+			if err != nil {
+				return err
+			}
+			return app.RunConfigure(c.Context, &ConfigureOption{
+				Show: c.Bool("show"),
+			})
+		},
 	}
+	cmd.Flags = append(cmd.Flags, globalFlags...)
+	return cmd
 }
 
-func (*ConfigureCmd) Name() string     { return "configure" }
-func (*ConfigureCmd) Synopsis() string { return "configure ecsta" }
-func (*ConfigureCmd) Usage() string {
-	return `configure [options]:
-  Configure ecsta.
-`
-}
-
-func (p *ConfigureCmd) SetFlags(f *flag.FlagSet) {
-	f.BoolVar(&p.show, "show", false, "show a current configuration")
-}
-
-func (p *ConfigureCmd) execute(ctx context.Context) error {
-	if p.show {
+func (app *Ecsta) RunConfigure(ctx context.Context, opt *ConfigureOption) error {
+	if opt.Show {
 		log.Println("configuration file:", configFilePath())
-		fmt.Fprintln(p.app.w, p.app.config.String())
+		fmt.Fprintln(app.w, app.config.String())
 		return nil
 	}
-	if err := reConfigure(p.app.config); err != nil {
+	if err := reConfigure(app.config); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (p *ConfigureCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if err := p.execute(ctx); err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitFailure
 }

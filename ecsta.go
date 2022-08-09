@@ -74,31 +74,34 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
-	tp := ecs.NewListTasksPaginator(
-		app.ecs,
-		&ecs.ListTasksInput{
-			Cluster:     &app.cluster,
-			Family:      opt.family,
-			ServiceName: opt.service,
-		},
-	)
-	for tp.HasMorePages() {
-		to, err := tp.NextPage(ctx)
-		if err != nil {
-			return nil, err
+	for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
+		tp := ecs.NewListTasksPaginator(
+			app.ecs,
+			&ecs.ListTasksInput{
+				Cluster:       &app.cluster,
+				Family:        opt.family,
+				ServiceName:   opt.service,
+				DesiredStatus: status,
+			},
+		)
+		for tp.HasMorePages() {
+			to, err := tp.NextPage(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if len(to.TaskArns) == 0 {
+				continue
+			}
+			out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
+				Cluster: &app.cluster,
+				Tasks:   to.TaskArns,
+				Include: []types.TaskField{"TAGS"},
+			})
+			if err != nil {
+				return nil, err
+			}
+			tasks = append(tasks, out.Tasks...)
 		}
-		if len(to.TaskArns) == 0 {
-			continue
-		}
-		out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
-			Cluster: &app.cluster,
-			Tasks:   to.TaskArns,
-			Include: []types.TaskField{"TAGS"},
-		})
-		if err != nil {
-			return nil, err
-		}
-		tasks = append(tasks, out.Tasks...)
 	}
 	return tasks, nil
 }

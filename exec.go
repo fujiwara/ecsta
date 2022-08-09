@@ -3,78 +3,89 @@ package ecsta
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"os/signal"
 
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	"github.com/google/subcommands"
+	"github.com/urfave/cli/v2"
 )
 
 const SessionManagerPluginBinary = "session-manager-plugin"
 
-type ExecCmd struct {
-	app *Ecsta
-
-	id        string
-	container string
-	command   string
+type ExecOption struct {
+	ID        string
+	Command   string
+	Container string
 }
 
-func NewExecCmd(app *Ecsta) *ExecCmd {
-	return &ExecCmd{
-		app: app,
+func newExecCommand() *cli.Command {
+	cmd := &cli.Command{
+		Name:  "exec",
+		Usage: "exec task",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "id",
+				Usage: "task ID",
+			},
+			&cli.StringFlag{
+				Name:  "command",
+				Usage: "command to execute",
+				Value: "sh",
+			},
+			&cli.StringFlag{
+				Name:  "container",
+				Usage: "container name",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app, err := NewFromCLI(c)
+			if err != nil {
+				return err
+			}
+			return app.RunExec(c.Context, &ExecOption{
+				ID:        c.String("id"),
+				Command:   c.String("command"),
+				Container: c.String("container"),
+			})
+		},
 	}
+	cmd.Flags = append(cmd.Flags, globalFlags...)
+	return cmd
 }
 
-func (*ExecCmd) Name() string     { return "exec" }
-func (*ExecCmd) Synopsis() string { return "exec task" }
-func (*ExecCmd) Usage() string {
-	return `exec [options]:
-  ECS Exec task in a cluster.
-`
-}
-
-func (p *ExecCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.id, "id", "", "task ID")
-	f.StringVar(&p.command, "command", "sh", "command")
-	f.StringVar(&p.container, "container", "", "container name")
-}
-
-func (p *ExecCmd) execute(ctx context.Context) error {
-	if err := p.app.SetCluster(ctx); err != nil {
+func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
+	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := p.app.findTask(ctx, p.id)
+	task, err := app.findTask(ctx, opt.ID)
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
 
-	name, err := p.app.findContainerName(ctx, task, p.container)
+	name, err := app.findContainerName(ctx, task, opt.Container)
 	if err != nil {
 		return fmt.Errorf("failed to select containers: %w", err)
 	}
-	p.container = name
+	opt.Container = name
 
-	out, err := p.app.ecs.ExecuteCommand(ctx, &ecs.ExecuteCommandInput{
+	out, err := app.ecs.ExecuteCommand(ctx, &ecs.ExecuteCommandInput{
 		Cluster:     task.ClusterArn,
 		Interactive: true,
 		Task:        task.TaskArn,
-		Command:     &p.command,
-		Container:   &p.container,
+		Command:     optional(opt.Command),
+		Container:   optional(opt.Container),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to execute command. %w See also https://github.com/aws-containers/amazon-ecs-exec-checker", err)
 	}
 	sess, _ := json.Marshal(out.Session)
-	ssmReq, err := buildSsmRequestParameters(task, p.container)
+	ssmReq, err := buildSsmRequestParameters(task, opt.Container)
 	if err != nil {
 		return fmt.Errorf("failed to build ssm request parameters: %w", err)
 	}
-	endpoint, err := p.app.Endpoint(ctx)
+	endpoint, err := app.Endpoint(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get endpoint: %w", err)
 	}
@@ -82,7 +93,7 @@ func (p *ExecCmd) execute(ctx context.Context) error {
 	cmd := exec.Command(
 		SessionManagerPluginBinary,
 		string(sess),
-		p.app.region,
+		app.region,
 		"StartSession",
 		"",
 		ssmReq.String(),
@@ -94,12 +105,4 @@ func (p *ExecCmd) execute(ctx context.Context) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func (p *ExecCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if err := p.execute(ctx); err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitFailure
 }
