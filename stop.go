@@ -2,77 +2,70 @@ package ecsta
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"log"
 
 	"github.com/Songmu/prompter"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
-	"github.com/google/subcommands"
+	"github.com/urfave/cli/v2"
 )
 
-type StopCmd struct {
-	app *Ecsta
-
-	id    string
-	force bool
+type StopOption struct {
+	ID    string
+	Force bool
 }
 
-func NewStopCmd(app *Ecsta) *StopCmd {
-	return &StopCmd{
-		app: app,
+func newStopCommand() *cli.Command {
+	cmd := &cli.Command{
+		Name:  "stop",
+		Usage: "stop task",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "id",
+				Usage: "task ID",
+			},
+			&cli.BoolFlag{
+				Name:  "force",
+				Usage: "stop without confirmation",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app, err := NewFromCLI(c)
+			if err != nil {
+				return err
+			}
+			return app.RunStop(c.Context, &StopOption{
+				ID:    c.String("id"),
+				Force: c.Bool("force"),
+			})
+		},
 	}
+	cmd.Flags = append(cmd.Flags, globalFlags...)
+	return cmd
 }
 
-func (*StopCmd) Name() string     { return "stop" }
-func (*StopCmd) Synopsis() string { return "stop task" }
-func (*StopCmd) Usage() string {
-	return `stop [options]:
-  Stop task in a cluster.
-`
-}
-
-func (p *StopCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.id, "id", "", "task ID")
-	f.BoolVar(&p.force, "force", false, "stop a task without confirmation")
-}
-
-func (p *StopCmd) execute(ctx context.Context) error {
-	if err := p.app.SetCluster(ctx); err != nil {
+func (app *Ecsta) RunStop(ctx context.Context, opt *StopOption) error {
+	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := p.app.findTask(ctx, p.id)
+	task, err := app.findTask(ctx, opt.ID)
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
-	return p.stopTask(ctx, task)
-}
 
-func (p *StopCmd) stopTask(ctx context.Context, task types.Task) error {
 	var doStop bool
-	if !p.force {
+	if !opt.Force {
 		doStop = prompter.YN(fmt.Sprintf("Do you request to stop a task %s?", arnToName(*task.TaskArn)), false)
 	}
 	if !doStop {
 		return ErrAborted
 	}
-	_, err := p.app.ecs.StopTask(ctx, &ecs.StopTaskInput{
-		Cluster: &p.app.cluster,
+	if _, err := app.ecs.StopTask(ctx, &ecs.StopTaskInput{
+		Cluster: &app.cluster,
 		Task:    task.TaskArn,
 		Reason:  aws.String("Request stop task by user action."),
-	})
-	if err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to stop task %s: %w", arnToName(*task.TaskArn), err)
 	}
 	return nil
-}
-
-func (p *StopCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if err := p.execute(ctx); err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitFailure
 }

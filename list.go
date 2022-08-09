@@ -2,50 +2,59 @@ package ecsta
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"log"
 
-	"github.com/google/subcommands"
+	"github.com/urfave/cli/v2"
 )
 
-type ListCmd struct {
-	app *Ecsta
-
-	family string
-	output string
+type ListOption struct {
+	Family  string
+	Service string
 }
 
-func NewListCmd(app *Ecsta) *ListCmd {
-	return &ListCmd{
-		app: app,
+func newListCommand() *cli.Command {
+	cmd := &cli.Command{
+		Name:  "list",
+		Usage: "List tasks",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "family",
+				Aliases: []string{"f"},
+				Usage:   "Task definition family",
+			},
+			&cli.StringFlag{
+				Name:    "service",
+				Aliases: []string{"s"},
+				Usage:   "Service name",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app, err := NewFromCLI(c)
+			if err != nil {
+				return err
+			}
+			return app.RunList(c.Context, &ListOption{
+				Family:  c.String("family"),
+				Service: c.String("service"),
+			})
+		},
 	}
+	cmd.Flags = append(cmd.Flags, globalFlags...)
+	return cmd
 }
 
-func (*ListCmd) Name() string     { return "list" }
-func (*ListCmd) Synopsis() string { return "liste tasks" }
-func (*ListCmd) Usage() string {
-	return `list -cluster <cluster> [options]:
-  Show task ARNs in the cluster.
-`
-}
-
-func (p *ListCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.family, "family", "", "task definition family")
-	f.StringVar(&p.output, "output", p.app.config.Get("output"), "output format (table|json|tsv)")
-}
-
-func (p *ListCmd) execute(ctx context.Context) error {
-	if err := p.app.SetCluster(ctx); err != nil {
+func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
+	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	tasks, err := p.app.listTasks(ctx, &optionListTasks{
-		family: optional(p.family),
+	tasks, err := app.listTasks(ctx, &optionListTasks{
+		family:  optional(opt.Family),
+		service: optional(opt.Service),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list tasks in cluster %s: %w", p.app.cluster, err)
+		return fmt.Errorf("failed to list tasks in cluster %s: %w", app.cluster, err)
 	}
-	f, err := newTaskFormatter(p.app.w, p.output, true)
+	f, err := newTaskFormatter(app.w, app.config.Get("output"), true)
 	if err != nil {
 		return fmt.Errorf("failed to create task formatter: %w", err)
 	}
@@ -54,12 +63,4 @@ func (p *ListCmd) execute(ctx context.Context) error {
 	}
 	f.Close()
 	return nil
-}
-
-func (p *ListCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if err := p.execute(ctx); err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitFailure
 }

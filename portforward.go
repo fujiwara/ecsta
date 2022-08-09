@@ -3,77 +3,97 @@ package ecsta
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/google/subcommands"
+	"github.com/urfave/cli/v2"
 )
 
-type PortforwardCmd struct {
-	app *Ecsta
-
-	id         string
-	container  string
-	localPort  int
-	remotePort int
-	remoteHost string
+type PortforwardOption struct {
+	ID         string
+	Container  string
+	LocalPort  int
+	RemotePort int
+	RemoteHost string
 }
 
-func NewPortforwardCmd(app *Ecsta) *PortforwardCmd {
-	return &PortforwardCmd{
-		app: app,
+func newPortforwardCommand() *cli.Command {
+	cmd := &cli.Command{
+		Name:  "portforward",
+		Usage: "forward port to task",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "id",
+				Usage: "task ID",
+			},
+			&cli.StringFlag{
+				Name:  "container",
+				Usage: "container name",
+			},
+			&cli.IntFlag{
+				Name:  "local-port",
+				Usage: "local port",
+				Value: 0,
+			},
+			&cli.IntFlag{
+				Name:  "port",
+				Usage: "remote port",
+				Value: 0,
+			},
+			&cli.StringFlag{
+				Name:  "host",
+				Usage: "remote host",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			app, err := NewFromCLI(c)
+			if err != nil {
+				return err
+			}
+			return app.RunPortforward(c.Context, &PortforwardOption{
+				ID:         c.String("id"),
+				Container:  c.String("container"),
+				LocalPort:  c.Int("local-port"),
+				RemotePort: c.Int("port"),
+				RemoteHost: c.String("host"),
+			})
+		},
 	}
+	cmd.Flags = append(cmd.Flags, globalFlags...)
+	return cmd
 }
 
-func (*PortforwardCmd) Name() string     { return "portforward" }
-func (*PortforwardCmd) Synopsis() string { return "port forwarding" }
-func (*PortforwardCmd) Usage() string {
-	return `portforward [options]:
-  Port forwarding to a task in a cluster.
-`
-}
-
-func (p *PortforwardCmd) SetFlags(f *flag.FlagSet) {
-	f.StringVar(&p.id, "id", "", "task ID")
-	f.StringVar(&p.container, "container", "", "container name")
-	f.IntVar(&p.localPort, "localport", 0, "local port")
-	f.IntVar(&p.remotePort, "port", 0, "remote port")
-	f.StringVar(&p.remoteHost, "host", "", "remote host")
-}
-
-func (p *PortforwardCmd) execute(ctx context.Context) error {
-	if p.remotePort == 0 {
+func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) error {
+	if opt.RemotePort == 0 {
 		return fmt.Errorf("--port is required")
 	}
-	if p.localPort == 0 {
+	if opt.LocalPort == 0 {
 		return fmt.Errorf("--localport is required")
 	}
 
-	if err := p.app.SetCluster(ctx); err != nil {
+	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := p.app.findTask(ctx, p.id)
+	task, err := app.findTask(ctx, opt.ID)
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
 
-	name, err := p.app.findContainerName(ctx, task, p.container)
+	name, err := app.findContainerName(ctx, task, opt.Container)
 	if err != nil {
 		return fmt.Errorf("failed to select containers: %w", err)
 	}
-	p.container = name
+	opt.Container = name
 
-	ssmReq, err := buildSsmRequestParameters(task, p.container)
+	ssmReq, err := buildSsmRequestParameters(task, opt.Container)
 	if err != nil {
 		return fmt.Errorf("failed to build ssm request parameters: %w", err)
 	}
-	endpoint, err := p.app.Endpoint(ctx)
+	endpoint, err := app.Endpoint(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get endpoint: %w", err)
 	}
@@ -82,16 +102,16 @@ func (p *PortforwardCmd) execute(ctx context.Context) error {
 		Target:       aws.String(ssmReq.Target),
 		DocumentName: aws.String("AWS-StartPortForwardingSession"),
 		Parameters: map[string][]string{
-			"portNumber":      {strconv.Itoa(p.remotePort)},
-			"localPortNumber": {strconv.Itoa(p.localPort)},
+			"portNumber":      {strconv.Itoa(opt.RemotePort)},
+			"localPortNumber": {strconv.Itoa(opt.LocalPort)},
 		},
 		Reason: aws.String("port forwarding"),
 	}
-	if p.remoteHost != "" {
-		in.Parameters["host"] = []string{p.remoteHost}
+	if opt.RemoteHost != "" {
+		in.Parameters["host"] = []string{opt.RemoteHost}
 		in.DocumentName = aws.String("AWS-StartPortForwardingSessionToRemoteHost")
 	}
-	res, err := p.app.ssm.StartSession(ctx, in)
+	res, err := app.ssm.StartSession(ctx, in)
 	if err != nil {
 		return fmt.Errorf("failed to start session: %w", err)
 	}
@@ -100,7 +120,7 @@ func (p *PortforwardCmd) execute(ctx context.Context) error {
 	cmd := exec.Command(
 		SessionManagerPluginBinary,
 		string(sess),
-		p.app.region,
+		app.region,
 		"StartSession",
 		"",
 		ssmReq.String(),
@@ -110,12 +130,4 @@ func (p *PortforwardCmd) execute(ctx context.Context) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func (p *PortforwardCmd) Execute(ctx context.Context, f *flag.FlagSet, _ ...interface{}) subcommands.ExitStatus {
-	if err := p.execute(ctx); err != nil {
-		log.Println("[error]", err)
-		return subcommands.ExitFailure
-	}
-	return subcommands.ExitFailure
 }

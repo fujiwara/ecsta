@@ -19,18 +19,27 @@ $ brew install fujiwara/tap/ecsta
 ## Usage
 
 ```
-Usage: ecsta <flags> <subcommand> <subcommand args>
+NAME:
+   ecsta - ECS task assistant
 
-Subcommands:
-        configure        configure ecsta
-        describe         describe task
-        exec             exec task
-        flags            describe all known top-level flags
-        list             liste tasks
-        portforward      port forwarding
-        stop             stop task
+USAGE:
+   ecsta [global options] command [command options] [arguments...]
 
-Use "ecsta flags" for a list of top-level flags
+COMMANDS:
+   configure    Create a configuration file of ecsta
+   describe     describe task
+   exec         exec task
+   list         List tasks
+   portforward  forward port to task
+   stop         stop task
+   trace        trace task
+   help, h      Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --cluster value, -c value  ECS cluster name [$ECS_CLUSTER]
+   --help, -h                 show help (default: false)
+   --output value, -o value   Output format (table, tsv, json)
+   --region value, -r value   AWS region (default: "ap-northeast-1") [$AWS_REGION]
 ```
 
 ### Configuration
@@ -54,17 +63,19 @@ $ ecsta configure -show
 ### List tasks
 
 ```
-$ ecsta list -h
-list -cluster <cluster> [options]:
-  Show task ARNs in the cluster.
-  -family string
-        task definition family
-  -output string
-        output format (table|json|tsv)
+NAME:
+   ecsta list - List tasks
+
+USAGE:
+   ecsta list [command options] [arguments...]
+
+OPTIONS:
+   --family value, -f value   Task definition family
+   --service value, -s value  Service name
 ```
 
 ```console
-$ ecsta -cluster foo list
+$ ecsta list -cluster foo
 |                ID                |   TASKDEFINITION   | INSTANCE | LASTSTATUS | DESIREDSTATUS |         CREATEDAT         |        GROUP        |  TYPE   |
 +----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+
 | 38b0db90fd4c4b5aaff29288b2179b5a | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-05T09:59:27+09:00 | service:nginx-local | FARGATE |
@@ -74,23 +85,29 @@ $ ecsta -cluster foo list
 ### Describe task
 
 ```
-describe [options]:
-  Describe a task in a cluster.
-  -id string
-        task ID
+NAME:
+   ecsta describe - describe task
+
+USAGE:
+   ecsta describe [command options] [arguments...]
+
+OPTIONS:
+   --id value                 task ID
 ```
 
 ### Exec task
 
 ```
-exec [options]:
-  ECS Exec task in a cluster.
-  -command string
-        command (default "sh")
-  -container string
-        container name
-  -id string
-        task ID
+NAME:
+   ecsta exec - exec task
+
+USAGE:
+   ecsta exec [command options] [arguments...]
+
+OPTIONS:
+   --command value            command to execute (default: "sh")
+   --container value          container name
+   --id value                 task ID
 ```
 
 ### Portfoward task
@@ -100,29 +117,32 @@ exec [options]:
 `-host` does not work currently. (ssm-agent version run by ECS Exec is too old)
 
 ```
-portforward [options]:
-  Port forwarding to a task in a cluster.
-  -container string
-        container name
-  -host string
-        remote host
-  -id string
-        task ID
-  -localport int
-        local port
-  -port int
-        remote port
+NAME:
+   ecsta portforward - forward port to task
+
+USAGE:
+   ecsta portforward [command options] [arguments...]
+
+OPTIONS:
+   --container value          container name
+   --host value               remote host
+   --id value                 task ID
+   --local-port value         local port (default: 0)
+   --port value               remote port (default: 0)
 ```
 
 ### Stop task
 
 ```
-stop [options]:
-  Stop task in a cluster.
-  -force
-        stop a task without confirmation
-  -id string
-        task ID
+NAME:
+   ecsta stop - stop task
+
+USAGE:
+   ecsta stop [command options] [arguments...]
+
+OPTIONS:
+   --force                    stop without confirmation (default: false)
+   --id value                 task ID
 ```
 
 ### Trace task
@@ -130,14 +150,16 @@ stop [options]:
 Run [tracer](https://github.com/fujiwara/tracer). No need to install `tracer` command.
 
 ```
-trace [options]:
-  Trace task in a cluster.
-  -duration duration
-        duration (default 5m0s)
-  -id string
-        task ID
-  -sns-topic-arn string
-        SNS topic ARN
+NAME:
+   ecsta trace - trace task
+
+USAGE:
+   ecsta trace [command options] [arguments...]
+
+OPTIONS:
+   --duration value           duration to trace (default: 1m0s)
+   --id value                 task ID
+   --sns-topic-arn value      SNS topic ARN
 ```
 
 ## LICENSE
