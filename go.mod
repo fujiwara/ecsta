@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.18.12
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.27.6
 	github.com/fujiwara/tracer v1.0.0-pre
+	github.com/google/go-cmp v0.5.8
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/urfave/cli/v2 v2.11.1
 )

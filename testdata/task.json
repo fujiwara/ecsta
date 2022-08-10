@@ -1,0 +1,121 @@
+{
+    "attachments": [
+        {
+            "id": "45e3543e-b96e-49ae-8f6e-130cfc4a831a",
+            "type": "ElasticNetworkInterface",
+            "status": "ATTACHED",
+            "details": [
+                {
+                    "name": "subnetId",
+                    "value": "subnet-04b750544ddd71274"
+                },
+                {
+                    "name": "networkInterfaceId",
+                    "value": "eni-022defbcdec55036b"
+                },
+                {
+                    "name": "macAddress",
+                    "value": "06:63:69:5b:38:1f"
+                },
+                {
+                    "name": "privateIPv4Address",
+                    "value": "10.3.1.230"
+                }
+            ]
+        }
+    ],
+    "attributes": [
+        {
+            "name": "ecs.cpu-architecture",
+            "value": "x86_64"
+        }
+    ],
+    "availabilityZone": "ap-northeast-1a",
+    "capacityProviderName": "FARGATE_SPOT",
+    "clusterArn": "arn:aws:ecs:ap-northeast-1:314472643515:cluster/ecspresso-test",
+    "connectivity": "CONNECTED",
+    "connectivityAt": "2022-08-06T00:12:54.089000+09:00",
+    "containers": [
+        {
+            "containerArn": "arn:aws:ecs:ap-northeast-1:314472643515:container/ecspresso-test/4deeb701c49a4892b7de39a2d0df17e0/199ba647-b50c-497e-a431-9a5b37f5ca83",
+            "taskArn": "arn:aws:ecs:ap-northeast-1:314472643515:task/ecspresso-test/4deeb701c49a4892b7de39a2d0df17e0",
+            "name": "bash",
+            "image": "debian:buster-slim",
+            "runtimeId": "4deeb701c49a4892b7de39a2d0df17e0-987533343",
+            "lastStatus": "RUNNING",
+            "networkBindings": [],
+            "networkInterfaces": [
+                {
+                    "attachmentId": "45e3543e-b96e-49ae-8f6e-130cfc4a831a",
+                    "privateIpv4Address": "10.3.1.230"
+                }
+            ],
+            "healthStatus": "UNKNOWN",
+            "managedAgents": [
+                {
+                    "lastStartedAt": "2022-08-06T00:13:24.886000+09:00",
+                    "name": "ExecuteCommandAgent",
+                    "lastStatus": "RUNNING"
+                }
+            ],
+            "cpu": "0"
+        },
+        {
+            "containerArn": "arn:aws:ecs:ap-northeast-1:314472643515:container/ecspresso-test/4deeb701c49a4892b7de39a2d0df17e0/abd5655f-ff6d-46dd-adac-44094f0a0429",
+            "taskArn": "arn:aws:ecs:ap-northeast-1:314472643515:task/ecspresso-test/4deeb701c49a4892b7de39a2d0df17e0",
+            "name": "nginx",
+            "image": "nginx:latest",
+            "runtimeId": "4deeb701c49a4892b7de39a2d0df17e0-2531612879",
+            "lastStatus": "RUNNING",
+            "networkBindings": [],
+            "networkInterfaces": [
+                {
+                    "attachmentId": "45e3543e-b96e-49ae-8f6e-130cfc4a831a",
+                    "privateIpv4Address": "10.3.1.230"
+                }
+            ],
+            "healthStatus": "UNKNOWN",
+            "managedAgents": [
+                {
+                    "lastStartedAt": "2022-08-06T00:13:24.886000+09:00",
+                    "name": "ExecuteCommandAgent",
+                    "lastStatus": "RUNNING"
+                }
+            ],
+            "cpu": "0"
+        }
+    ],
+    "cpu": "256",
+    "createdAt": "2022-08-06T00:12:50.409000+09:00",
+    "desiredStatus": "RUNNING",
+    "enableExecuteCommand": true,
+    "group": "service:nginx-local",
+    "healthStatus": "UNKNOWN",
+    "lastStatus": "RUNNING",
+    "launchType": "FARGATE",
+    "memory": "512",
+    "overrides": {
+        "containerOverrides": [
+            {
+                "name": "nginx"
+            },
+            {
+                "name": "bash"
+            }
+        ],
+        "inferenceAcceleratorOverrides": []
+    },
+    "platformVersion": "1.4.0",
+    "platformFamily": "Linux",
+    "pullStartedAt": "2022-08-06T00:13:09.103000+09:00",
+    "pullStoppedAt": "2022-08-06T00:13:17.139000+09:00",
+    "startedAt": "2022-08-06T00:13:19.899000+09:00",
+    "startedBy": "ecs-svc/9246916181302778773",
+    "tags": [],
+    "taskArn": "arn:aws:ecs:ap-northeast-1:314472643515:task/ecspresso-test/4deeb701c49a4892b7de39a2d0df17e0",
+    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-1:314472643515:task-definition/ecspresso-test:499",
+    "version": 3,
+    "ephemeralStorage": {
+        "sizeInGiB": 50
+    }
+}
