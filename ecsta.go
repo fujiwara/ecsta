@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -25,6 +26,7 @@ type Ecsta struct {
 	awscfg aws.Config
 	ecs    *ecs.Client
 	ssm    *ssm.Client
+	logs   *cloudwatchlogs.Client
 	w      io.Writer
 
 	config Config
@@ -45,6 +47,7 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 		awscfg:  awscfg,
 		ecs:     ecs.NewFromConfig(awscfg),
 		ssm:     ssm.NewFromConfig(awscfg),
+		logs:    cloudwatchlogs.NewFromConfig(awscfg),
 		w:       os.Stdout,
 		config:  conf,
 	}
