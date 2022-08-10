@@ -42,6 +42,12 @@ func TestMarshalUnmarshalTask(t *testing.T) {
 	if addr := aws.ToString(task.Containers[0].NetworkInterfaces[0].PrivateIpv4Address); addr != "10.3.1.230" {
 		t.Errorf("unexpected private ipv4 address: %s", addr)
 	}
+	if task.EnableExecuteCommand != true {
+		t.Errorf("unexpected enable execute command: %v", task.EnableExecuteCommand)
+	}
+	if task.EphemeralStorage.SizeInGiB != 50 {
+		t.Errorf("unexpected ephemeral storage size: %d", task.EphemeralStorage.SizeInGiB)
+	}
 
 	b2, err := ecsta.MarshalJSONForAPI(&task)
 	if err != nil {
