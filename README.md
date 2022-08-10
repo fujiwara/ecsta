@@ -162,6 +162,21 @@ OPTIONS:
    --sns-topic-arn value      SNS topic ARN
 ```
 
+### Logs
+
+```
+NAME:
+   ecsta logs - show log messages of task
+
+USAGE:
+   ecsta logs [command options] [arguments...]
+
+OPTIONS:
+   --duration value           duration to start time (default: 1m0s)
+   --follow, -f               follow logs (default: false)
+   --id value                 task ID
+```
+
 ## LICENSE
 
 [MIT](LICENSE)

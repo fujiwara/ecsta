@@ -36,6 +36,7 @@ func NewCLI() *cli.App {
 			newDescribeCommand(),
 			newExecCommand(),
 			newListCommand(),
+			newLogsCommand(),
 			newPortforwardCommand(),
 			newStopCommand(),
 			newTraceCommand(),
