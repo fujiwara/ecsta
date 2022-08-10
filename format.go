@@ -159,8 +159,7 @@ func jsonKeyForStruct(s string) string {
 func walkMap(m map[string]interface{}, fn func(string) string) {
 	for key, value := range m {
 		delete(m, key)
-		key = fn(key[:1]) + key[1:]
-		m[key] = value
+		m[fn(key)] = value
 		switch value := value.(type) {
 		case map[string]interface{}:
 			walkMap(value, fn)
