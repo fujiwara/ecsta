@@ -129,7 +129,7 @@ func MarshalJSONForAPI(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(m, "", "  ")
 }
 
-func UnmarshalJSONForAPI(src []byte, v interface{}) error {
+func UnmarshalJSONForStruct(src []byte, v interface{}) error {
 	m := map[string]interface{}{}
 	if err := json.Unmarshal(src, &m); err != nil {
 		return err

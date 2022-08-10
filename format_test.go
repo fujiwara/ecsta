@@ -30,7 +30,7 @@ func TestMarshalUnmarshalTask(t *testing.T) {
 		t.Error(err)
 	}
 	var task types.Task
-	if err := ecsta.UnmarshalJSONForAPI(b, &task); err != nil {
+	if err := ecsta.UnmarshalJSONForStruct(b, &task); err != nil {
 		t.Error(err)
 	}
 	if cpu := aws.ToString(task.Cpu); cpu != "256" {
@@ -48,7 +48,7 @@ func TestMarshalUnmarshalTask(t *testing.T) {
 		t.Error(err)
 	}
 	var task2 types.Task
-	if err := ecsta.UnmarshalJSONForAPI(b2, &task2); err != nil {
+	if err := ecsta.UnmarshalJSONForStruct(b2, &task2); err != nil {
 		t.Error(err)
 	}
 	if diff := cmp.Diff(task, task2, ignore); diff != "" {
