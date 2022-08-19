@@ -49,7 +49,7 @@ func NewFromCLI(c *cli.Context) (*Ecsta, error) {
 	if err != nil {
 		return nil, err
 	}
-	app.config.OverrideCLI(c)
+	app.Config.OverrideCLI(c)
 	return app, nil
 }
 

@@ -40,10 +40,10 @@ func newConfigureCommand() *cli.Command {
 func (app *Ecsta) RunConfigure(ctx context.Context, opt *ConfigureOption) error {
 	if opt.Show {
 		log.Println("configuration file:", configFilePath())
-		fmt.Fprintln(app.w, app.config.String())
+		fmt.Fprintln(app.w, app.Config.String())
 		return nil
 	}
-	if err := reConfigure(app.config); err != nil {
+	if err := reConfigure(app.Config); err != nil {
 		return err
 	}
 	return nil

@@ -20,6 +20,8 @@ import (
 var ErrAborted = errors.New("Aborted")
 
 type Ecsta struct {
+	Config Config
+
 	region  string
 	cluster string
 
@@ -28,8 +30,6 @@ type Ecsta struct {
 	ssm    *ssm.Client
 	logs   *cloudwatchlogs.Client
 	w      io.Writer
-
-	config Config
 }
 
 func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
@@ -42,6 +42,8 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 		return nil, err
 	}
 	app := &Ecsta{
+		Config: conf,
+
 		cluster: cluster,
 		region:  awscfg.Region,
 		awscfg:  awscfg,
@@ -49,7 +51,6 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 		ssm:     ssm.NewFromConfig(awscfg),
 		logs:    cloudwatchlogs.NewFromConfig(awscfg),
 		w:       os.Stdout,
-		config:  conf,
 	}
 	return app, nil
 }
