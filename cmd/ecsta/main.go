@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -10,9 +11,10 @@ import (
 var version = "current"
 
 func main() {
+	ctx := context.TODO()
 	cliApp := ecsta.NewCLI()
 	cliApp.Version = version
-	if err := cliApp.Run(os.Args); err != nil {
+	if err := cliApp.RunContext(ctx, os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
