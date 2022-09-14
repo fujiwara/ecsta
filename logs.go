@@ -16,9 +16,10 @@ import (
 )
 
 type LogsOption struct {
-	ID       string
-	Duration time.Duration
-	Follow   bool
+	ID        string
+	Duration  time.Duration
+	Follow    bool
+	Container string
 }
 
 func newLogsCommand() *cli.Command {
@@ -40,6 +41,10 @@ func newLogsCommand() *cli.Command {
 				Usage:   "follow logs",
 				Aliases: []string{"f"},
 			},
+			&cli.StringFlag{
+				Name:  "container",
+				Usage: "container name",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			app, err := NewFromCLI(c)
@@ -47,9 +52,10 @@ func newLogsCommand() *cli.Command {
 				return err
 			}
 			return app.RunLogs(c.Context, &LogsOption{
-				ID:       c.String("id"),
-				Duration: c.Duration("duration"),
-				Follow:   c.Bool("follow"),
+				ID:        c.String("id"),
+				Duration:  c.Duration("duration"),
+				Follow:    c.Bool("follow"),
+				Container: c.String("container"),
 			})
 		},
 	}
@@ -73,8 +79,14 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 	}
 	var wg sync.WaitGroup
 	start := time.Now().Add(-opt.Duration)
+	follows := 0
+	containerNames := make([]string, 0, len(res.TaskDefinition.ContainerDefinitions))
 	for _, c := range res.TaskDefinition.ContainerDefinitions {
 		name := aws.ToString(c.Name)
+		containerNames = append(containerNames, name)
+		if opt.Container != "" && opt.Container != name {
+			continue
+		}
 		if c.LogConfiguration == nil {
 			continue
 		}
@@ -85,6 +97,7 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 		logGroup := logOpts["awslogs-group"]
 		logStream := fmt.Sprintf("%s/%s/%s", logOpts["awslogs-stream-prefix"], *c.Name, arnToName(*task.TaskArn))
 		wg.Add(1)
+		follows++
 		go func() {
 			defer wg.Done()
 			if err := app.followLogs(ctx, &followOption{
@@ -99,6 +112,9 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 		}()
 	}
 	wg.Wait()
+	if follows == 0 {
+		return fmt.Errorf("no logs found. available containers: %s", strings.Join(containerNames, ", "))
+	}
 	return nil
 }
 
