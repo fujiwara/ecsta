@@ -1,6 +1,6 @@
 # ecsta
 
-ecsta is a "ECS Task Assistant" tool.
+ecsta is an "ECS Task Assistant" tool.
 
 ## Product status
 
@@ -110,7 +110,7 @@ OPTIONS:
    --id value                 task ID
 ```
 
-### Portfoward task
+### Portforward task
 
 `-port` and `-localport` are required.
 
