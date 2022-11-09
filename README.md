@@ -1,6 +1,6 @@
 # ecsta
 
-ecsta is a "ECS Task Assistant" tool.
+ecsta is an "ECS Task Assistant" tool.
 
 ## Product status
 
@@ -118,7 +118,7 @@ Flags:
       --container=STRING    container name
 ```
 
-### Portfoward task
+### Portforward task
 
 `-port` and `-localport` are required.
 
@@ -172,9 +172,10 @@ Usage: ecsta logs
 Show log messages of a task
 
 Flags:
-      --id=STRING         task ID
-      --duration=1m       duration to start time
-  -f, --follow            follow logs
+      --id=STRING           task ID
+      --duration=1m         duration to start time
+  -f, --follow              follow logs
+      --container=STRING    container name
 ```
 
 ## LICENSE
