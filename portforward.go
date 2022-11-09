@@ -10,71 +10,17 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
-	"github.com/urfave/cli/v2"
 )
 
 type PortforwardOption struct {
-	ID         string
-	Container  string
-	LocalPort  int
-	RemotePort int
-	RemoteHost string
-}
-
-func newPortforwardCommand() *cli.Command {
-	cmd := &cli.Command{
-		Name:  "portforward",
-		Usage: "forward port to task",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "id",
-				Usage: "task ID",
-			},
-			&cli.StringFlag{
-				Name:  "container",
-				Usage: "container name",
-			},
-			&cli.IntFlag{
-				Name:  "local-port",
-				Usage: "local port",
-				Value: 0,
-			},
-			&cli.IntFlag{
-				Name:  "port",
-				Usage: "remote port",
-				Value: 0,
-			},
-			&cli.StringFlag{
-				Name:  "host",
-				Usage: "remote host",
-			},
-		},
-		Action: func(c *cli.Context) error {
-			app, err := NewFromCLI(c)
-			if err != nil {
-				return err
-			}
-			return app.RunPortforward(c.Context, &PortforwardOption{
-				ID:         c.String("id"),
-				Container:  c.String("container"),
-				LocalPort:  c.Int("local-port"),
-				RemotePort: c.Int("port"),
-				RemoteHost: c.String("host"),
-			})
-		},
-	}
-	cmd.Flags = append(cmd.Flags, globalFlags...)
-	return cmd
+	ID         string `help:"task ID"`
+	Container  string `help:"container name"`
+	LocalPort  int    `help:"local port" required:"true"`
+	RemotePort int    `help:"remote port" required:"true"`
+	RemoteHost string `help:"remote host"`
 }
 
 func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) error {
-	if opt.RemotePort == 0 {
-		return fmt.Errorf("--port is required")
-	}
-	if opt.LocalPort == 0 {
-		return fmt.Errorf("--localport is required")
-	}
-
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}

@@ -9,50 +9,14 @@ import (
 	"os/signal"
 
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	"github.com/urfave/cli/v2"
 )
 
 const SessionManagerPluginBinary = "session-manager-plugin"
 
 type ExecOption struct {
-	ID        string
-	Command   string
-	Container string
-}
-
-func newExecCommand() *cli.Command {
-	cmd := &cli.Command{
-		Name:  "exec",
-		Usage: "exec task",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "id",
-				Usage: "task ID",
-			},
-			&cli.StringFlag{
-				Name:  "command",
-				Usage: "command to execute",
-				Value: "sh",
-			},
-			&cli.StringFlag{
-				Name:  "container",
-				Usage: "container name",
-			},
-		},
-		Action: func(c *cli.Context) error {
-			app, err := NewFromCLI(c)
-			if err != nil {
-				return err
-			}
-			return app.RunExec(c.Context, &ExecOption{
-				ID:        c.String("id"),
-				Command:   c.String("command"),
-				Container: c.String("container"),
-			})
-		},
-	}
-	cmd.Flags = append(cmd.Flags, globalFlags...)
-	return cmd
+	ID        string `help:"task ID"`
+	Command   string `help:"command to execute" default:"sh"`
+	Container string `help:"container name"`
 }
 
 func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {

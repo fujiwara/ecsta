@@ -3,44 +3,11 @@ package ecsta
 import (
 	"context"
 	"fmt"
-
-	"github.com/urfave/cli/v2"
 )
 
 type ListOption struct {
-	Family  string
-	Service string
-}
-
-func newListCommand() *cli.Command {
-	cmd := &cli.Command{
-		Name:  "list",
-		Usage: "List tasks",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "family",
-				Aliases: []string{"f"},
-				Usage:   "Task definition family",
-			},
-			&cli.StringFlag{
-				Name:    "service",
-				Aliases: []string{"s"},
-				Usage:   "Service name",
-			},
-		},
-		Action: func(c *cli.Context) error {
-			app, err := NewFromCLI(c)
-			if err != nil {
-				return err
-			}
-			return app.RunList(c.Context, &ListOption{
-				Family:  c.String("family"),
-				Service: c.String("service"),
-			})
-		},
-	}
-	cmd.Flags = append(cmd.Flags, globalFlags...)
-	return cmd
+	Family  string `help:"Task definition family" short:"f"`
+	Service string `help:"Service name" short:"s"`
 }
 
 func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {

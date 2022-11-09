@@ -12,49 +12,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
-	"github.com/urfave/cli/v2"
 )
 
 type LogsOption struct {
-	ID       string
-	Duration time.Duration
-	Follow   bool
-}
-
-func newLogsCommand() *cli.Command {
-	cmd := &cli.Command{
-		Name:  "logs",
-		Usage: "show log messages of task",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "id",
-				Usage: "task ID",
-			},
-			&cli.DurationFlag{
-				Name:  "duration",
-				Usage: "duration to start time",
-				Value: time.Minute,
-			},
-			&cli.BoolFlag{
-				Name:    "follow",
-				Usage:   "follow logs",
-				Aliases: []string{"f"},
-			},
-		},
-		Action: func(c *cli.Context) error {
-			app, err := NewFromCLI(c)
-			if err != nil {
-				return err
-			}
-			return app.RunLogs(c.Context, &LogsOption{
-				ID:       c.String("id"),
-				Duration: c.Duration("duration"),
-				Follow:   c.Bool("follow"),
-			})
-		},
-	}
-	cmd.Flags = append(cmd.Flags, globalFlags...)
-	return cmd
+	ID       string        `help:"task ID"`
+	Duration time.Duration `help:"duration to start time" default:"1m"`
+	Follow   bool          `help:"follow logs" short:"f"`
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
