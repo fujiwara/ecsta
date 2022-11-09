@@ -18,6 +18,7 @@ import (
 )
 
 var ErrAborted = errors.New("Aborted")
+var Version string
 
 type Ecsta struct {
 	Config Config

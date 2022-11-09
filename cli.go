@@ -1,58 +1,44 @@
 package ecsta
 
 import (
-	"github.com/urfave/cli/v2"
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/alecthomas/kong"
 )
 
-var globalFlags = []cli.Flag{
-	&cli.StringFlag{
-		Name:    "cluster",
-		Aliases: []string{"c"},
-		Usage:   "ECS cluster name",
-		EnvVars: []string{"ECS_CLUSTER"},
-	},
-	&cli.StringFlag{
-		Name:    "region",
-		Aliases: []string{"r"},
-		Usage:   "AWS region",
-		EnvVars: []string{"AWS_REGION"},
-	},
-	&cli.StringFlag{
-		Name:    "output",
-		Aliases: []string{"o"},
-		Usage:   "Output format (table, tsv, json)",
-		Value:   "",
-	},
+type CLI struct {
+	Cluster string `help:"ECS cluster name" short:"c" env:"ECS_CLUSTER"`
+	Region  string `help:"AWS region" short:"r" env:"AWS_REGION"`
+	Output  string `help:"output format (table, tsv, json)" short:"o" default:"table" enum:"table,tsv,json"`
+
+	Configure *ConfigureOption `cmd:"" help:"Create a configuration file of ecsta"`
 }
 
-func NewCLI() *cli.App {
-	return &cli.App{
-		Name:           "ecsta",
-		Usage:          "ECS task assistant",
-		Flags:          globalFlags,
-		DefaultCommand: "help",
-		Commands: []*cli.Command{
-			newConfigureCommand(),
-			newDescribeCommand(),
-			newExecCommand(),
-			newListCommand(),
-			newLogsCommand(),
-			newPortforwardCommand(),
-			newStopCommand(),
-			newTraceCommand(),
-		},
-	}
-}
-
-func NewFromCLI(c *cli.Context) (*Ecsta, error) {
-	app, err := New(c.Context, c.String("region"), c.String("cluster"))
+func RunCLI(ctx context.Context, args []string) error {
+	var cli CLI
+	parser, err := kong.New(&cli, kong.Vars{"version": Version})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	app.Config.OverrideCLI(c)
-	return app, nil
+	kctx, err := parser.Parse(args)
+	if err != nil {
+		return err
+	}
+	app, err := New(ctx, cli.Region, cli.Cluster)
+	if err != nil {
+		return err
+	}
+	// app.Config.OverrideCLI()
+	switch strings.Fields(kctx.Command())[0] {
+	case "configure":
+		return app.RunConfigure(ctx, cli.Configure)
+	}
+	return fmt.Errorf("unknown command: %s", kctx.Command())
 }
 
+/*
 func (config Config) OverrideCLI(c *cli.Context) {
 	for _, elm := range ConfigElements {
 		if v := c.String(elm.Name); v != "" {
@@ -60,3 +46,4 @@ func (config Config) OverrideCLI(c *cli.Context) {
 		}
 	}
 }
+*/
