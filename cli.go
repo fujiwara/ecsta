@@ -38,7 +38,7 @@ func RunCLI(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
-	// app.Config.OverrideCLI()
+	app.Config.OverrideCLI(&cli)
 	cmd := strings.Fields(kctx.Command())[0]
 	return app.Dispatch(ctx, cmd, &cli)
 }
@@ -68,12 +68,8 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 	return fmt.Errorf("unknown command: %s", command)
 }
 
-/*
-func (config Config) OverrideCLI(c *cli.Context) {
-	for _, elm := range ConfigElements {
-		if v := c.String(elm.Name); v != "" {
-			config.Set(elm.Name, v)
-		}
+func (config Config) OverrideCLI(cli *CLI) {
+	if cli.Output != "" {
+		config.Set("output", cli.Output)
 	}
 }
-*/
