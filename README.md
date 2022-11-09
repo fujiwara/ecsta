@@ -19,27 +19,41 @@ $ brew install fujiwara/tap/ecsta
 ## Usage
 
 ```
-NAME:
-   ecsta - ECS task assistant
+Usage: ecsta <command>
 
-USAGE:
-   ecsta [global options] command [command options] [arguments...]
+Flags:
+  -h, --help              Show context-sensitive help.
+  -c, --cluster=STRING    ECS cluster name ($ECS_CLUSTER)
+  -r, --region=STRING     AWS region ($AWS_REGION)
+  -o, --output="table"    output format (table, tsv, json)
 
-COMMANDS:
-   configure    Create a configuration file of ecsta
-   describe     describe task
-   exec         exec task
-   list         List tasks
-   portforward  forward port to task
-   stop         stop task
-   trace        trace task
-   help, h      Shows a list of commands or help for one command
+Commands:
+  configure
+    Create a configuration file of ecsta
 
-GLOBAL OPTIONS:
-   --cluster value, -c value  ECS cluster name [$ECS_CLUSTER]
-   --help, -h                 show help (default: false)
-   --output value, -o value   Output format (table, tsv, json)
-   --region value, -r value   AWS region (default: "ap-northeast-1") [$AWS_REGION]
+  describe
+    Describe tasks
+
+  exec
+    Execute a command on a task
+
+  list
+    List tasks
+
+  logs
+    Show log messages of a task
+
+  portforward --local-port=INT --remote-port=INT
+    Forward a port of a task
+
+  stop
+    Stop a task
+
+  trace
+    Trace a task
+
+  version
+    Show version
 ```
 
 ### Configuration
@@ -52,7 +66,7 @@ $ ecsta configure
 ```
 
 ```console
-$ ecsta configure -show
+$ ecsta configure --show
 2022/08/08 15:36:54 configuration file: /home/fujiwara/.config/ecsta/config.json
 {
   "filter_command": "peco",
@@ -63,19 +77,17 @@ $ ecsta configure -show
 ### List tasks
 
 ```
-NAME:
-   ecsta list - List tasks
+Usage: ecsta list
 
-USAGE:
-   ecsta list [command options] [arguments...]
+List tasks
 
-OPTIONS:
-   --family value, -f value   Task definition family
-   --service value, -s value  Service name
+Flags:
+  -f, --family=STRING     Task definition family
+  -s, --service=STRING    Service name
 ```
 
 ```console
-$ ecsta list -cluster foo
+$ ecsta list --cluster foo
 |                ID                |   TASKDEFINITION   | INSTANCE | LASTSTATUS | DESIREDSTATUS |         CREATEDAT         |        GROUP        |  TYPE   |
 +----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+
 | 38b0db90fd4c4b5aaff29288b2179b5a | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-05T09:59:27+09:00 | service:nginx-local | FARGATE |
@@ -85,29 +97,25 @@ $ ecsta list -cluster foo
 ### Describe task
 
 ```
-NAME:
-   ecsta describe - describe task
+Usage: ecsta describe
 
-USAGE:
-   ecsta describe [command options] [arguments...]
+Describe tasks
 
-OPTIONS:
-   --id value                 task ID
+Flags:
+      --id=STRING         task ID
 ```
 
 ### Exec task
 
 ```
-NAME:
-   ecsta exec - exec task
+Usage: ecsta exec
 
-USAGE:
-   ecsta exec [command options] [arguments...]
+Execute a command on a task
 
-OPTIONS:
-   --command value            command to execute (default: "sh")
-   --container value          container name
-   --id value                 task ID
+Flags:
+      --id=STRING           task ID
+      --command="sh"        command to execute
+      --container=STRING    container name
 ```
 
 ### Portforward task
@@ -117,32 +125,28 @@ OPTIONS:
 `-host` does not work currently. (ssm-agent version run by ECS Exec is too old)
 
 ```
-NAME:
-   ecsta portforward - forward port to task
+Usage: ecsta portforward --local-port=INT --remote-port=INT
 
-USAGE:
-   ecsta portforward [command options] [arguments...]
+Forward a port of a task
 
-OPTIONS:
-   --container value          container name
-   --host value               remote host
-   --id value                 task ID
-   --local-port value         local port (default: 0)
-   --port value               remote port (default: 0)
+Flags:
+      --id=STRING             task ID
+      --container=STRING      container name
+      --local-port=INT        local port
+      --remote-port=INT       remote port
+      --remote-host=STRING    remote host
 ```
 
 ### Stop task
 
 ```
-NAME:
-   ecsta stop - stop task
+Usage: ecsta stop
 
-USAGE:
-   ecsta stop [command options] [arguments...]
+Stop a task
 
-OPTIONS:
-   --force                    stop without confirmation (default: false)
-   --id value                 task ID
+Flags:
+      --id=STRING         task ID
+      --force             stop without confirmation
 ```
 
 ### Trace task
@@ -150,32 +154,28 @@ OPTIONS:
 Run [tracer](https://github.com/fujiwara/tracer). No need to install `tracer` command.
 
 ```
-NAME:
-   ecsta trace - trace task
+Usage: ecsta trace
 
-USAGE:
-   ecsta trace [command options] [arguments...]
+Trace a task
 
-OPTIONS:
-   --duration value           duration to trace (default: 1m0s)
-   --id value                 task ID
-   --sns-topic-arn value      SNS topic ARN
+Flags:
+      --id=STRING               task ID
+      --duration=1m             duration to trace
+      --sns-topic-arn=STRING    SNS topic ARN
 ```
 
 ### Logs
 
 ```
-NAME:
-   ecsta logs - show log messages of task
+Usage: ecsta logs
 
-USAGE:
-   ecsta logs [command options] [arguments...]
+Show log messages of a task
 
-OPTIONS:
-   --duration value           duration to start time (default: 1m0s)
-   --follow, -f               follow logs (default: false)
-   --id value                 task ID
-   --container value          container name
+Flags:
+      --id=STRING           task ID
+      --duration=1m         duration to start time
+  -f, --follow              follow logs
+      --container=STRING    container name
 ```
 
 ## LICENSE

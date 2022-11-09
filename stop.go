@@ -7,41 +7,11 @@ import (
 	"github.com/Songmu/prompter"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
-	"github.com/urfave/cli/v2"
 )
 
 type StopOption struct {
-	ID    string
-	Force bool
-}
-
-func newStopCommand() *cli.Command {
-	cmd := &cli.Command{
-		Name:  "stop",
-		Usage: "stop task",
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  "id",
-				Usage: "task ID",
-			},
-			&cli.BoolFlag{
-				Name:  "force",
-				Usage: "stop without confirmation",
-			},
-		},
-		Action: func(c *cli.Context) error {
-			app, err := NewFromCLI(c)
-			if err != nil {
-				return err
-			}
-			return app.RunStop(c.Context, &StopOption{
-				ID:    c.String("id"),
-				Force: c.Bool("force"),
-			})
-		},
-	}
-	cmd.Flags = append(cmd.Flags, globalFlags...)
-	return cmd
+	ID    string `help:"task ID"`
+	Force bool   `help:"stop without confirmation"`
 }
 
 func (app *Ecsta) RunStop(ctx context.Context, opt *StopOption) error {
