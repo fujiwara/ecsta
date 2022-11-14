@@ -120,9 +120,7 @@ Flags:
 
 ### Portforward task
 
-`-port` and `-localport` are required.
-
-`-host` does not work currently. (ssm-agent version run by ECS Exec is too old)
+`-local-port` and `-remote-port` are required.
 
 ```
 Usage: ecsta portforward --local-port=INT --remote-port=INT
