@@ -13,7 +13,7 @@ func (app *Ecsta) RunDescribe(ctx context.Context, opt *DescribeOption) error {
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := app.findTask(ctx, opt.ID)
+	task, err := app.findTask(ctx, &optionFindTask{id: opt.ID})
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}

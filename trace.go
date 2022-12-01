@@ -12,13 +12,15 @@ type TraceOption struct {
 	ID          string        `help:"task ID"`
 	Duration    time.Duration `help:"duration to trace" default:"1m"`
 	SNSTopicArn string        `help:"SNS topic ARN"`
+	Family      *string       `help:"task definiton family name"`
+	Service     *string       `help:"ECS service name"`
 }
 
 func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := app.findTask(ctx, opt.ID)
+	task, err := app.findTask(ctx, &optionFindTask{id: opt.ID, family: opt.Family, service: opt.Service})
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}

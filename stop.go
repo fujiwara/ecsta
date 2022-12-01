@@ -10,15 +10,17 @@ import (
 )
 
 type StopOption struct {
-	ID    string `help:"task ID"`
-	Force bool   `help:"stop without confirmation"`
+	ID      string  `help:"task ID"`
+	Force   bool    `help:"stop without confirmation"`
+	Family  *string `help:"task definition family name"`
+	Service *string `help:"ECS service name"`
 }
 
 func (app *Ecsta) RunStop(ctx context.Context, opt *StopOption) error {
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := app.findTask(ctx, opt.ID)
+	task, err := app.findTask(ctx, &optionFindTask{id: opt.ID, family: opt.Family, service: opt.Service})
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}

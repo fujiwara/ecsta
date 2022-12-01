@@ -155,9 +155,15 @@ func (app *Ecsta) selectByFilter(ctx context.Context, src []string, title string
 	return res, nil
 }
 
-func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
-	if id != "" {
-		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{id}})
+type optionFindTask struct {
+	id      string
+	family  *string
+	service *string
+}
+
+func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task, error) {
+	if opt.id != "" {
+		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{opt.id}})
 		if err != nil {
 			return types.Task{}, err
 		}
@@ -165,7 +171,10 @@ func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 			return tasks[0], nil
 		}
 	}
-	tasks, err := app.listTasks(ctx, &optionListTasks{})
+	tasks, err := app.listTasks(ctx, &optionListTasks{
+		family:  opt.family,
+		service: opt.service,
+	})
 	if err != nil {
 		return types.Task{}, err
 	}
@@ -179,7 +188,7 @@ func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 	if err != nil {
 		return types.Task{}, fmt.Errorf("failed to run filter: %w", err)
 	}
-	id = strings.SplitN(res, "\t", 2)[0]
+	id := strings.SplitN(res, "\t", 2)[0]
 	for _, task := range tasks {
 		if arnToName(*task.TaskArn) == id {
 			return task, nil
