@@ -6,8 +6,8 @@ import (
 )
 
 type ListOption struct {
-	Family  string `help:"Task definition family" short:"f"`
-	Service string `help:"Service name" short:"s"`
+	Family  *string `help:"Task definition family" short:"f"`
+	Service *string `help:"Service name" short:"s"`
 }
 
 func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
@@ -15,8 +15,8 @@ func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
 		return err
 	}
 	tasks, err := app.listTasks(ctx, &optionListTasks{
-		family:  optional(opt.Family),
-		service: optional(opt.Service),
+		family:  opt.Family,
+		service: opt.Service,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list tasks in cluster %s: %w", app.cluster, err)
