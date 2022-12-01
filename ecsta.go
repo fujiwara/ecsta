@@ -79,33 +79,42 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
-	for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
-		tp := ecs.NewListTasksPaginator(
-			app.ecs,
-			&ecs.ListTasksInput{
-				Cluster:       &app.cluster,
-				Family:        opt.family,
-				ServiceName:   opt.service,
-				DesiredStatus: status,
-			},
-		)
-		for tp.HasMorePages() {
-			to, err := tp.NextPage(ctx)
-			if err != nil {
-				return nil, err
+	var inputs []*ecs.ListTasksInput
+	if opt.family != nil && opt.service != nil {
+		// LisTasks does not support family and service at the same time
+		// spilit into two requests
+		inputs = []*ecs.ListTasksInput{
+			{Cluster: &app.cluster, Family: opt.family},
+			{Cluster: &app.cluster, ServiceName: opt.service},
+		}
+	} else {
+		inputs = []*ecs.ListTasksInput{
+			{Cluster: &app.cluster, Family: opt.family, ServiceName: opt.service},
+		}
+	}
+	for _, input := range inputs {
+		for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
+			input := input
+			input.DesiredStatus = status
+			tp := ecs.NewListTasksPaginator(app.ecs, input)
+			for tp.HasMorePages() {
+				to, err := tp.NextPage(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if len(to.TaskArns) == 0 {
+					continue
+				}
+				out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
+					Cluster: &app.cluster,
+					Tasks:   to.TaskArns,
+					Include: []types.TaskField{"TAGS"},
+				})
+				if err != nil {
+					return nil, err
+				}
+				tasks = append(tasks, out.Tasks...)
 			}
-			if len(to.TaskArns) == 0 {
-				continue
-			}
-			out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
-				Cluster: &app.cluster,
-				Tasks:   to.TaskArns,
-				Include: []types.TaskField{"TAGS"},
-			})
-			if err != nil {
-				return nil, err
-			}
-			tasks = append(tasks, out.Tasks...)
 		}
 	}
 	return tasks, nil
@@ -155,9 +164,15 @@ func (app *Ecsta) selectByFilter(ctx context.Context, src []string, title string
 	return res, nil
 }
 
-func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
-	if id != "" {
-		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{id}})
+type optionFindTask struct {
+	id      string
+	family  *string
+	service *string
+}
+
+func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task, error) {
+	if opt.id != "" {
+		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{opt.id}})
 		if err != nil {
 			return types.Task{}, err
 		}
@@ -165,7 +180,10 @@ func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 			return tasks[0], nil
 		}
 	}
-	tasks, err := app.listTasks(ctx, &optionListTasks{})
+	tasks, err := app.listTasks(ctx, &optionListTasks{
+		family:  opt.family,
+		service: opt.service,
+	})
 	if err != nil {
 		return types.Task{}, err
 	}
@@ -179,7 +197,7 @@ func (app *Ecsta) findTask(ctx context.Context, id string) (types.Task, error) {
 	if err != nil {
 		return types.Task{}, fmt.Errorf("failed to run filter: %w", err)
 	}
-	id = strings.SplitN(res, "\t", 2)[0]
+	id := strings.SplitN(res, "\t", 2)[0]
 	for _, task := range tasks {
 		if arnToName(*task.TaskArn) == id {
 			return task, nil

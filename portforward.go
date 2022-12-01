@@ -13,18 +13,20 @@ import (
 )
 
 type PortforwardOption struct {
-	ID         string `help:"task ID"`
-	Container  string `help:"container name"`
-	LocalPort  int    `help:"local port" required:"true"`
-	RemotePort int    `help:"remote port" required:"true"`
-	RemoteHost string `help:"remote host"`
+	ID         string  `help:"task ID"`
+	Container  string  `help:"container name"`
+	LocalPort  int     `help:"local port" required:"true"`
+	RemotePort int     `help:"remote port" required:"true"`
+	RemoteHost string  `help:"remote host"`
+	Family     *string `help:"task definiton family name"`
+	Service    *string `help:"ECS service name"`
 }
 
 func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) error {
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := app.findTask(ctx, opt.ID)
+	task, err := app.findTask(ctx, &optionFindTask{id: opt.ID, family: opt.Family, service: opt.Service})
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
