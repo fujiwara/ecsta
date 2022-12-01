@@ -4,7 +4,7 @@ ecsta is an "ECS Task Assistant" tool.
 
 ## Product status
 
-alpha quality.
+Production ready.
 
 ## Install
 
