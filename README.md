@@ -102,7 +102,9 @@ Usage: ecsta describe
 Describe tasks
 
 Flags:
-      --id=STRING         task ID
+      --id=STRING          task ID
+      --family=FAMILY      task definition family name
+      --service=SERVICE    ECS service name
 ```
 
 ### Exec task
@@ -116,6 +118,8 @@ Flags:
       --id=STRING           task ID
       --command="sh"        command to execute
       --container=STRING    container name
+      --family=FAMILY       task definition family name
+      --service=SERVICE     ECS service name
 ```
 
 ### Portforward task
@@ -133,6 +137,8 @@ Flags:
       --local-port=INT        local port
       --remote-port=INT       remote port
       --remote-host=STRING    remote host
+      --family=FAMILY         task definition family name
+      --service=SERVICE       ECS service name
 ```
 
 ### Stop task
@@ -145,6 +151,8 @@ Stop a task
 Flags:
       --id=STRING         task ID
       --force             stop without confirmation
+      --family=FAMILY     task definition family name
+      --service=SERVICE   ECS service name
 ```
 
 ### Trace task
@@ -160,6 +168,8 @@ Flags:
       --id=STRING               task ID
       --duration=1m             duration to trace
       --sns-topic-arn=STRING    SNS topic ARN
+      --family=FAMILY           task definition family name
+      --service=SERVICE         ECS service name
 ```
 
 ### Logs
@@ -174,6 +184,8 @@ Flags:
       --duration=1m         duration to start time
   -f, --follow              follow logs
       --container=STRING    container name
+      --family=FAMILY       task definition family name
+      --service=SERVICE     ECS service name
 ```
 
 ## LICENSE
