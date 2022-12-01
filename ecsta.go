@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/samber/lo"
 )
 
 var ErrAborted = errors.New("Aborted")
@@ -117,7 +118,9 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 			}
 		}
 	}
-	return tasks, nil
+	return lo.UniqBy(tasks, func(task types.Task) string {
+		return aws.ToString(task.TaskArn)
+	}), nil
 }
 
 func (app *Ecsta) listClusters(ctx context.Context) ([]string, error) {
