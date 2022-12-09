@@ -25,7 +25,7 @@ func (app *Ecsta) RunStop(ctx context.Context, opt *StopOption) error {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
 
-	var doStop bool
+	doStop := true
 	if !opt.Force {
 		doStop = prompter.YN(fmt.Sprintf("Do you request to stop a task %s?", arnToName(*task.TaskArn)), false)
 	}
