@@ -21,7 +21,7 @@ func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
 	if err != nil {
 		return fmt.Errorf("failed to list tasks in cluster %s: %w", app.cluster, err)
 	}
-	f, err := newTaskFormatter(app.w, app.Config.Get("output"), true)
+	f, err := newTaskFormatter(app.w, app.Config.Get("output"), formatterOption{hasHeader: true})
 	if err != nil {
 		return fmt.Errorf("failed to create task formatter: %w", err)
 	}

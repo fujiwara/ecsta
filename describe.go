@@ -19,7 +19,10 @@ func (app *Ecsta) RunDescribe(ctx context.Context, opt *DescribeOption) error {
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}
-	f := newTaskFormatterJSON(app.w)
+	f, err := newTaskFormatterJSON(app.w, formatterOption{})
+	if err != nil {
+		return err
+	}
 	f.AddTask(task)
 	f.Close()
 	return nil

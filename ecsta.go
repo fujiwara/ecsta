@@ -191,7 +191,7 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 		return types.Task{}, err
 	}
 	buf := new(bytes.Buffer)
-	f, _ := newTaskFormatter(buf, "tsv", false)
+	f, _ := newTaskFormatter(buf, "tsv", formatterOption{hasHeader: false})
 	for _, task := range tasks {
 		f.AddTask(task)
 	}

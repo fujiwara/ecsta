@@ -9,17 +9,23 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/itchyny/gojq"
 	"github.com/olekukonko/tablewriter"
 )
 
-func newTaskFormatter(w io.Writer, t string, hasHeader bool) (taskFormatter, error) {
+type formatterOption struct {
+	hasHeader bool
+	jqQuery   string
+}
+
+func newTaskFormatter(w io.Writer, t string, opt formatterOption) (taskFormatter, error) {
 	switch t {
 	case "table":
-		return newTaskFormatterTable(w, hasHeader), nil
+		return newTaskFormatterTable(w, opt)
 	case "tsv":
-		return newTaskFormatterTSV(w, hasHeader), nil
+		return newTaskFormatterTSV(w, opt)
 	case "json":
-		return newTaskFormatterJSON(w), nil
+		return newTaskFormatterJSON(w, opt)
 	default:
 		return nil, fmt.Errorf("unknown task formatter: %s", t)
 	}
@@ -58,15 +64,15 @@ type taskFormatterTable struct {
 	table *tablewriter.Table
 }
 
-func newTaskFormatterTable(w io.Writer, hasHeader bool) *taskFormatterTable {
+func newTaskFormatterTable(w io.Writer, opt formatterOption) (*taskFormatterTable, error) {
 	t := &taskFormatterTable{
 		table: tablewriter.NewWriter(w),
 	}
-	if hasHeader {
+	if opt.hasHeader {
 		t.table.SetHeader(taskFormatterColumns)
 	}
 	t.table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
-	return t
+	return t, nil
 }
 
 func (t *taskFormatterTable) AddTask(task types.Task) {
@@ -81,12 +87,12 @@ type taskFormatterTSV struct {
 	w io.Writer
 }
 
-func newTaskFormatterTSV(w io.Writer, header bool) *taskFormatterTSV {
+func newTaskFormatterTSV(w io.Writer, opt formatterOption) (*taskFormatterTSV, error) {
 	t := &taskFormatterTSV{w: w}
-	if header {
+	if opt.hasHeader {
 		fmt.Fprintln(t.w, strings.Join(taskFormatterColumns, "\t"))
 	}
-	return t
+	return t, nil
 }
 
 func (t *taskFormatterTSV) AddTask(task types.Task) {
@@ -97,11 +103,20 @@ func (t *taskFormatterTSV) Close() {
 }
 
 type taskFormatterJSON struct {
-	w io.Writer
+	w    io.Writer
+	gojq *gojq.Query
 }
 
-func newTaskFormatterJSON(w io.Writer) *taskFormatterJSON {
-	return &taskFormatterJSON{w: w}
+func newTaskFormatterJSON(w io.Writer, opt formatterOption) (*taskFormatterJSON, error) {
+	f := &taskFormatterJSON{w: w}
+	if opt.jqQuery != "" {
+		query, err := gojq.Parse(opt.jqQuery)
+		if err != nil {
+			return nil, err
+		}
+		f.gojq = query
+	}
+	return f, nil
 }
 
 func (t *taskFormatterJSON) AddTask(task types.Task) {
