@@ -3,7 +3,6 @@ package ecsta_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -170,7 +169,7 @@ func TestFormatTasks(t *testing.T) {
 				}
 				f.Close()
 			}
-			b, _ := ioutil.ReadFile(ts.wantFile)
+			b, _ := os.ReadFile(ts.wantFile)
 			if got := buf.String(); got != string(b) {
 				t.Errorf("got %q, want %q", got, string(b))
 			}
