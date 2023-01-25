@@ -53,6 +53,11 @@ var ConfigElements = []ConfigElement{
 		Description: "output format (table, tsv or json)",
 		Default:     "table",
 	},
+	{
+		Name:        "task_format_query",
+		Description: "A jq query to format task in selector",
+		Default:     "",
+	},
 }
 
 var configDir string

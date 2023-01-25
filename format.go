@@ -14,8 +14,10 @@ import (
 )
 
 type formatterOption struct {
-	hasHeader bool
-	jqQuery   string
+	Format       string
+	HasHeader    bool
+	AppendTaskID bool
+	Query        string
 }
 
 type taskFormatterFunc func(io.Writer, formatterOption) (taskFormatter, error)
@@ -26,11 +28,11 @@ var taskFormatters map[string]taskFormatterFunc = map[string]taskFormatterFunc{
 	"json":  newTaskFormatterJSON,
 }
 
-func newTaskFormatter(w io.Writer, t string, opt formatterOption) (taskFormatter, error) {
-	if f, ok := taskFormatters[t]; ok {
+func newTaskFormatter(w io.Writer, opt formatterOption) (taskFormatter, error) {
+	if f, ok := taskFormatters[opt.Format]; ok {
 		return f(w, opt)
 	}
-	return nil, fmt.Errorf("unknown task formatter: %s", t)
+	return nil, fmt.Errorf("unknown task formatter: %s", opt.Format)
 }
 
 type taskFormatter interface {
@@ -70,7 +72,7 @@ func newTaskFormatterTable(w io.Writer, opt formatterOption) (taskFormatter, err
 	t := &taskFormatterTable{
 		table: tablewriter.NewWriter(w),
 	}
-	if opt.hasHeader {
+	if opt.HasHeader {
 		t.table.SetHeader(taskFormatterColumns)
 	}
 	t.table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
@@ -91,7 +93,7 @@ type taskFormatterTSV struct {
 
 func newTaskFormatterTSV(w io.Writer, opt formatterOption) (taskFormatter, error) {
 	t := &taskFormatterTSV{w: w}
-	if opt.hasHeader {
+	if opt.HasHeader {
 		fmt.Fprintln(t.w, strings.Join(taskFormatterColumns, "\t"))
 	}
 	return t, nil
@@ -105,14 +107,18 @@ func (t *taskFormatterTSV) Close() {
 }
 
 type taskFormatterJSON struct {
-	w    io.Writer
-	gojq *gojq.Query
+	w            io.Writer
+	gojq         *gojq.Query
+	appendTaskID bool
 }
 
 func newTaskFormatterJSON(w io.Writer, opt formatterOption) (taskFormatter, error) {
-	f := &taskFormatterJSON{w: w}
-	if opt.jqQuery != "" {
-		query, err := gojq.Parse(opt.jqQuery)
+	f := &taskFormatterJSON{
+		w:            w,
+		appendTaskID: opt.AppendTaskID,
+	}
+	if opt.Query != "" {
+		query, err := gojq.Parse(opt.Query)
 		if err != nil {
 			return nil, err
 		}
@@ -122,9 +128,13 @@ func newTaskFormatterJSON(w io.Writer, opt formatterOption) (taskFormatter, erro
 }
 
 func (t *taskFormatterJSON) AddTask(task types.Task) {
-	b, err := MarshalJSONForAPI(task)
+	b, err := MarshalJSONForAPI(task, t.gojq)
 	if err != nil {
 		panic(err)
+	}
+	if t.appendTaskID {
+		// ensure task arn at the beginning of the line
+		io.WriteString(t.w, arnToName(*task.TaskArn)+"\t")
 	}
 	t.w.Write(b)
 	t.w.Write([]byte{'\n'})
@@ -133,7 +143,7 @@ func (t *taskFormatterJSON) AddTask(task types.Task) {
 func (t *taskFormatterJSON) Close() {
 }
 
-func MarshalJSONForAPI(v interface{}) ([]byte, error) {
+func MarshalJSONForAPI(v interface{}, query *gojq.Query) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
@@ -143,7 +153,25 @@ func MarshalJSONForAPI(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 	walkMap(m, jsonKeyForAPI)
-	return json.MarshalIndent(m, "", "  ")
+	if query == nil {
+		return json.MarshalIndent(m, "", "  ")
+	}
+	iter := query.Run(m)
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			return nil, nil // no output(or end of stream)
+		}
+		if err, ok := v.(error); ok {
+			return nil, err
+		}
+		switch val := v.(type) {
+		case string:
+			return []byte(val), nil
+		default:
+			return json.Marshal(val) // without indent
+		}
+	}
 }
 
 func UnmarshalJSONForStruct(src []byte, v interface{}) error {

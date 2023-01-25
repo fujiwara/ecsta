@@ -9,9 +9,10 @@ import (
 )
 
 type CLI struct {
-	Cluster string `help:"ECS cluster name" short:"c" env:"ECS_CLUSTER"`
-	Region  string `help:"AWS region" short:"r" env:"AWS_REGION"`
-	Output  string `help:"output format (table, tsv, json)" short:"o" default:"table" enum:"table,tsv,json"`
+	Cluster         string `help:"ECS cluster name" short:"c" env:"ECS_CLUSTER"`
+	Region          string `help:"AWS region" short:"r" env:"AWS_REGION"`
+	Output          string `help:"output format (table, tsv, json)" short:"o" default:"table" enum:"table,tsv,json" env:"ECSTA_OUTPUT"`
+	TaskFormatQuery string `help:"A jq query to format task in selector" short:"q" env:"ECSTA_TASK_FORMAT_QUERY"`
 
 	Configure   *ConfigureOption   `cmd:"" help:"Create a configuration file of ecsta"`
 	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
@@ -71,5 +72,8 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 func (config Config) OverrideCLI(cli *CLI) {
 	if cli.Output != "" {
 		config.Set("output", cli.Output)
+	}
+	if cli.TaskFormatQuery != "" {
+		config.Set("task_format_query", cli.TaskFormatQuery)
 	}
 }
