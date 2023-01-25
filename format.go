@@ -18,17 +18,19 @@ type formatterOption struct {
 	jqQuery   string
 }
 
+type taskFormatterFunc func(io.Writer, formatterOption) (taskFormatter, error)
+
+var taskFormatters map[string]taskFormatterFunc = map[string]taskFormatterFunc{
+	"table": newTaskFormatterTable,
+	"tsv":   newTaskFormatterTSV,
+	"json":  newTaskFormatterJSON,
+}
+
 func newTaskFormatter(w io.Writer, t string, opt formatterOption) (taskFormatter, error) {
-	switch t {
-	case "table":
-		return newTaskFormatterTable(w, opt)
-	case "tsv":
-		return newTaskFormatterTSV(w, opt)
-	case "json":
-		return newTaskFormatterJSON(w, opt)
-	default:
-		return nil, fmt.Errorf("unknown task formatter: %s", t)
+	if f, ok := taskFormatters[t]; ok {
+		return f(w, opt)
 	}
+	return nil, fmt.Errorf("unknown task formatter: %s", t)
 }
 
 type taskFormatter interface {
@@ -64,7 +66,7 @@ type taskFormatterTable struct {
 	table *tablewriter.Table
 }
 
-func newTaskFormatterTable(w io.Writer, opt formatterOption) (*taskFormatterTable, error) {
+func newTaskFormatterTable(w io.Writer, opt formatterOption) (taskFormatter, error) {
 	t := &taskFormatterTable{
 		table: tablewriter.NewWriter(w),
 	}
@@ -87,7 +89,7 @@ type taskFormatterTSV struct {
 	w io.Writer
 }
 
-func newTaskFormatterTSV(w io.Writer, opt formatterOption) (*taskFormatterTSV, error) {
+func newTaskFormatterTSV(w io.Writer, opt formatterOption) (taskFormatter, error) {
 	t := &taskFormatterTSV{w: w}
 	if opt.hasHeader {
 		fmt.Fprintln(t.w, strings.Join(taskFormatterColumns, "\t"))
@@ -107,7 +109,7 @@ type taskFormatterJSON struct {
 	gojq *gojq.Query
 }
 
-func newTaskFormatterJSON(w io.Writer, opt formatterOption) (*taskFormatterJSON, error) {
+func newTaskFormatterJSON(w io.Writer, opt formatterOption) (taskFormatter, error) {
 	f := &taskFormatterJSON{w: w}
 	if opt.jqQuery != "" {
 		query, err := gojq.Parse(opt.jqQuery)
