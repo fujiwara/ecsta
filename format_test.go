@@ -158,6 +158,13 @@ var formatTestSuite = []struct {
 }
 
 func TestFormatTasks(t *testing.T) {
+	if tz, ok := os.LookupEnv("TZ"); ok {
+		defer os.Setenv("TZ", tz)
+	} else {
+		defer os.Unsetenv("TZ")
+	}
+	os.Setenv("TZ", "Asia/Tokyo")
+
 	for _, ts := range formatTestSuite {
 		t.Run(fmt.Sprintf("%#v", ts.opt), func(t *testing.T) {
 			buf := new(bytes.Buffer)
