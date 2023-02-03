@@ -22,10 +22,12 @@ $ brew install fujiwara/tap/ecsta
 Usage: ecsta <command>
 
 Flags:
-  -h, --help              Show context-sensitive help.
-  -c, --cluster=STRING    ECS cluster name ($ECS_CLUSTER)
-  -r, --region=STRING     AWS region ($AWS_REGION)
-  -o, --output="table"    output format (table, tsv, json)
+  -h, --help                        Show context-sensitive help.
+  -c, --cluster=STRING              ECS cluster name ($ECS_CLUSTER)
+  -r, --region=STRING               AWS region ($AWS_REGION)
+  -o, --output="table"              output format (table, tsv, json) ($ECSTA_OUTPUT)
+  -q, --task-format-query=STRING    A jq query to format task in selector
+                                    ($ECSTA_TASK_FORMAT_QUERY)
 
 Commands:
   configure
@@ -187,6 +189,26 @@ Flags:
       --family=FAMILY       task definition family name
       --service=SERVICE     ECS service name
 ```
+
+### `--task-format-query(-q)` option
+
+This option provides a formatter by [jq](https://stedolan.github.io/jq/) query. The query processes tasks JSON (that output equals to ecsta describe) in task selector outputs.
+
+For example,
+
+```console
+$ ecsta -q '[(.tags[]|select(.key=="Env")|.value), .launchType] | @tsv' exec
+```
+
+A task selector output will be as below.
+
+```console
+045a0639-1dc5-4d17-8101-2dd3fd339e91    prod    EC2
+8f431e68-a57d-41db-ae8d-5eb700a134dc    dev     FARGATE
+```
+
+The query `[(.tags[]|select(.key=="Env")|.value), .launchType] | @tsv` means,
+"Show tags value of "Env" key, and LaunchType for tasks as TSV format.".
 
 ## LICENSE
 
