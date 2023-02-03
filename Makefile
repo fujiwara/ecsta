@@ -1,7 +1,7 @@
 .PHONY: test install clean
 
 test:
-	go test ./...
+	TZ=Asia/Tokyo go test ./...
 
 install:
 	go install github.com/fujiwara/ecsta/cmd/ecsta

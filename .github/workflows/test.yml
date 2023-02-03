@@ -22,3 +22,5 @@ jobs:
       - name: Build & Test
         run: |
           go test -race -v ./...
+        env:
+          TZ: Asia/Tokyo # for time.Local

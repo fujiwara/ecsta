@@ -190,8 +190,21 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 	if err != nil {
 		return types.Task{}, err
 	}
+
 	buf := new(bytes.Buffer)
-	f, _ := newTaskFormatter(buf, "tsv", false)
+	fopt := formatterOption{
+		Format:       "tsv",
+		HasHeader:    false,
+		AppendTaskID: true,
+	} // default
+	if query := app.Config.Get("task_format_query"); query != "" {
+		fopt.Format = "json"
+		fopt.Query = query
+	}
+	f, err := newTaskFormatter(buf, fopt)
+	if err != nil {
+		return types.Task{}, fmt.Errorf("failed to create formatter: %w", err)
+	}
 	for _, task := range tasks {
 		f.AddTask(task)
 	}
