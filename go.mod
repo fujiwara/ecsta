@@ -3,6 +3,7 @@ module github.com/fujiwara/ecsta
 go 1.18
 
 require (
+	github.com/Songmu/flextime v0.1.0
 	github.com/Songmu/prompter v0.5.1
 	github.com/alecthomas/kong v0.7.0
 	github.com/aws/aws-sdk-go-v2 v1.17.1
@@ -15,6 +16,7 @@ require (
 	github.com/itchyny/gojq v0.12.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.36.0
+	github.com/tkuchiki/parsetime v0.3.0
 )
 
 require (
@@ -33,6 +35,7 @@ require (
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
+	github.com/tkuchiki/go-timezone v0.2.2 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect

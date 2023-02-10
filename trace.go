@@ -10,7 +10,7 @@ import (
 
 type TraceOption struct {
 	ID          string        `help:"task ID"`
-	Duration    time.Duration `help:"duration to trace" default:"1m"`
+	Duration    time.Duration `help:"duration to trace" short:"d" default:"1m"`
 	SNSTopicArn string        `help:"SNS topic ARN"`
 	Family      *string       `help:"task definiton family name"`
 	Service     *string       `help:"ECS service name"`

@@ -8,19 +8,38 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Songmu/flextime"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/tkuchiki/parsetime"
 )
 
 type LogsOption struct {
 	ID        string        `help:"task ID"`
-	Duration  time.Duration `help:"duration to start time" default:"1m"`
+	StartTime string        `help:"a start time of logs" short:"s"`
+	Duration  time.Duration `help:"duration to start time" short:"d" default:"1m"`
 	Follow    bool          `help:"follow logs" short:"f"`
 	Container string        `help:"container name"`
 	Family    *string       `help:"task definiton family name"`
 	Service   *string       `help:"ECS service name"`
+}
+
+func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
+	if opt.StartTime != "" {
+		p, err := parsetime.NewParseTime()
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("failed to create parsetime: %w", err)
+		}
+		t, err := p.Parse(opt.StartTime)
+		if err != nil {
+			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse start time: %w", err)
+		}
+		return t, t.Add(opt.Duration), nil
+	}
+	now := flextime.Now()
+	return now.Add(-opt.Duration), now, nil
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
@@ -38,7 +57,10 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 		return fmt.Errorf("failed to describe task definition: %w", err)
 	}
 	var wg sync.WaitGroup
-	start := time.Now().Add(-opt.Duration)
+	startTime, endTime, err := opt.ResolveTimestamps()
+	if err != nil {
+		return err
+	}
 	follows := 0
 	containerNames := make([]string, 0, len(res.TaskDefinition.ContainerDefinitions))
 	for _, c := range res.TaskDefinition.ContainerDefinitions {
@@ -63,7 +85,8 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 			if err := app.followLogs(ctx, &followOption{
 				logGroup:      logGroup,
 				logStream:     logStream,
-				start:         start,
+				startTime:     startTime,
+				endTime:       endTime,
 				follow:        opt.Follow,
 				containerName: name,
 			}); err != nil {
@@ -82,7 +105,8 @@ type followOption struct {
 	logGroup      string
 	logStream     string
 	containerName string
-	start         time.Time
+	startTime     time.Time
+	endTime       time.Time
 	follow        bool
 }
 
@@ -91,14 +115,21 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	in := &cloudwatchlogs.GetLogEventsInput{
 		LogGroupName:  &opt.logGroup,
 		LogStreamName: &opt.logStream,
-		Limit:         aws.Int32(100),
-		StartTime:     aws.Int64(timeToInt64msec(opt.start)),
+		StartTime:     aws.Int64(timeToInt64msec(opt.startTime)),
+		Limit:         aws.Int32(1000),
 	}
+	if !opt.follow {
+		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
+	}
+FOLLOW:
 	for {
 		if nextToken != nil {
-			in.NextToken = nextToken
-			in.StartFromHead = nil
-			in.StartTime = nil
+			in = &cloudwatchlogs.GetLogEventsInput{
+				LogGroupName:  &opt.logGroup,
+				LogStreamName: &opt.logStream,
+				Limit:         aws.Int32(1000),
+				NextToken:     nextToken,
+			}
 		}
 		res, err := app.logs.GetLogEvents(ctx, in)
 		if err != nil {
@@ -108,6 +139,9 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 		}
 		for _, e := range res.Events {
 			ts := msecToTime(aws.ToInt64(e.Timestamp))
+			if ts.After(opt.endTime) {
+				break FOLLOW
+			}
 			fmt.Println(strings.Join([]string{
 				ts.Format(time.RFC3339Nano),
 				opt.containerName,
