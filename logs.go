@@ -19,7 +19,7 @@ import (
 type LogsOption struct {
 	ID        string        `help:"task ID"`
 	StartTime string        `help:"a start time of logs" short:"s"`
-	Duration  time.Duration `help:"duration to start time" default:"1m"`
+	Duration  time.Duration `help:"duration to start time" short:"d" default:"1m"`
 	Follow    bool          `help:"follow logs" short:"f"`
 	Container string        `help:"container name"`
 	Family    *string       `help:"task definiton family name"`
@@ -115,10 +115,10 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	in := &cloudwatchlogs.GetLogEventsInput{
 		LogGroupName:  &opt.logGroup,
 		LogStreamName: &opt.logStream,
+		StartTime:     aws.Int64(timeToInt64msec(opt.startTime)),
 		Limit:         aws.Int32(1000),
 	}
 	if !opt.follow {
-		in.StartTime = aws.Int64(timeToInt64msec(opt.startTime))
 		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
 	}
 FOLLOW:
