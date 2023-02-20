@@ -45,6 +45,14 @@ var logsOptionTests = []logsOptionTest{
 		startTime: time.Date(2023, 1, 2, 11, 22, 0, 0, time.Local),
 		endTime:   time.Date(2023, 1, 2, 11, 23, 0, 0, time.Local),
 	},
+	{
+		title: "5 minutes ago from now with --follow",
+		opt: &ecsta.LogsOption{
+			Duration: 5 * time.Minute,
+			Follow:   true,
+		},
+		startTime: time.Date(2023, 2, 10, 11, 17, 33, 0, time.Local),
+	},
 }
 
 func TestLogOptStartTime(t *testing.T) {

@@ -27,6 +27,7 @@ type LogsOption struct {
 }
 
 func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
+	var startTime, endTime time.Time
 	if opt.StartTime != "" {
 		p, err := parsetime.NewParseTime()
 		if err != nil {
@@ -36,10 +37,17 @@ func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
 		if err != nil {
 			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse start time: %w", err)
 		}
-		return t, t.Add(opt.Duration), nil
+		startTime = t
+		endTime = t.Add(opt.Duration)
+	} else {
+		now := flextime.Now()
+		startTime = now.Add(-opt.Duration)
+		endTime = now
 	}
-	now := flextime.Now()
-	return now.Add(-opt.Duration), now, nil
+	if opt.Follow {
+		endTime = time.Time{}
+	}
+	return startTime, endTime, nil
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
@@ -139,7 +147,7 @@ FOLLOW:
 		}
 		for _, e := range res.Events {
 			ts := msecToTime(aws.ToInt64(e.Timestamp))
-			if ts.After(opt.endTime) {
+			if !opt.follow && ts.After(opt.endTime) {
 				break FOLLOW
 			}
 			fmt.Println(strings.Join([]string{
