@@ -19,7 +19,7 @@ import (
 type LogsOption struct {
 	ID        string        `help:"task ID"`
 	StartTime string        `help:"a start time of logs" short:"s"`
-	Duration  time.Duration `help:"duration to start time" short:"d" default:"1m"`
+	Duration  time.Duration `help:"log timestamps duration" short:"d" default:"1m"`
 	Follow    bool          `help:"follow logs" short:"f"`
 	Container string        `help:"container name"`
 	Family    *string       `help:"task definiton family name"`
@@ -27,6 +27,7 @@ type LogsOption struct {
 }
 
 func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
+	var startTime, endTime time.Time
 	if opt.StartTime != "" {
 		p, err := parsetime.NewParseTime()
 		if err != nil {
@@ -36,10 +37,17 @@ func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
 		if err != nil {
 			return time.Time{}, time.Time{}, fmt.Errorf("failed to parse start time: %w", err)
 		}
-		return t, t.Add(opt.Duration), nil
+		startTime = t
+		endTime = t.Add(opt.Duration)
+	} else {
+		now := flextime.Now()
+		startTime = now.Add(-opt.Duration)
+		endTime = now
 	}
-	now := flextime.Now()
-	return now.Add(-opt.Duration), now, nil
+	if opt.Follow {
+		endTime = time.Time{}
+	}
+	return startTime, endTime, nil
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
@@ -110,6 +118,10 @@ type followOption struct {
 	follow        bool
 }
 
+func (o followOption) Follow() bool {
+	return o.follow || o.endTime.IsZero()
+}
+
 func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	var nextToken *string
 	in := &cloudwatchlogs.GetLogEventsInput{
@@ -118,7 +130,7 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 		StartTime:     aws.Int64(timeToInt64msec(opt.startTime)),
 		Limit:         aws.Int32(1000),
 	}
-	if !opt.follow {
+	if !opt.Follow() {
 		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
 	}
 FOLLOW:
@@ -139,7 +151,7 @@ FOLLOW:
 		}
 		for _, e := range res.Events {
 			ts := msecToTime(aws.ToInt64(e.Timestamp))
-			if ts.After(opt.endTime) {
+			if !opt.Follow() && ts.After(opt.endTime) {
 				break FOLLOW
 			}
 			fmt.Println(strings.Join([]string{
@@ -149,8 +161,8 @@ FOLLOW:
 			}, "\t"))
 		}
 		if aws.ToString(nextToken) == aws.ToString(res.NextForwardToken) {
-			if !opt.follow {
-				break
+			if !opt.Follow() {
+				break FOLLOW
 			}
 			time.Sleep(time.Second)
 			continue
