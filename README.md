@@ -184,7 +184,7 @@ Show log messages of a task
 Flags:
      --id=STRING                   task ID
   -s, --start-time=STRING           a start time of logs
-  -d, --duration=1m                 duration to start time
+  -d, --duration=1m                 log timestamps duration
   -f, --follow                      follow logs
       --container=STRING            container name
       --family=FAMILY               task definiton family name
@@ -192,6 +192,8 @@ Flags:
 ```
 
 `--start-time` accepts flexible time formats (ISO8601, RFC3339, and etc). See also (tkuchiki/parsetime)[https://github.com/tkuchiki/parsetime].
+
+When `--start-time` and `--follow` is specified both, `--start-time` may not work correctly.
 
 ### `--task-format-query(-q)` option
 
