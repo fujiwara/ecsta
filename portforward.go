@@ -26,7 +26,10 @@ func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) er
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
-	task, err := app.findTask(ctx, &optionFindTask{id: opt.ID, family: opt.Family, service: opt.Service})
+	task, err := app.findTask(ctx, &optionFindTask{
+		id: opt.ID, family: opt.Family, service: opt.Service,
+		selectFunc: selectFuncExcludeStopped,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to select tasks: %w", err)
 	}

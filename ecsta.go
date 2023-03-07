@@ -167,10 +167,15 @@ func (app *Ecsta) selectByFilter(ctx context.Context, src []string, title string
 	return res, nil
 }
 
+var selectFuncExcludeStopped = func(task types.Task) bool {
+	return aws.ToString(task.LastStatus) != "STOPPED"
+}
+
 type optionFindTask struct {
-	id      string
-	family  *string
-	service *string
+	id         string
+	family     *string
+	service    *string
+	selectFunc func(types.Task) bool
 }
 
 func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task, error) {
@@ -189,6 +194,11 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 	})
 	if err != nil {
 		return types.Task{}, err
+	}
+	if opt.selectFunc != nil {
+		tasks = lo.Filter(tasks, func(task types.Task, _ int) bool {
+			return opt.selectFunc(task)
+		})
 	}
 
 	buf := new(bytes.Buffer)
