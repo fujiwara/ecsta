@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -25,8 +26,10 @@ type Console struct {
 	Select      *SelectOption      `cmd:"" help:"Select a task"`
 	Stop        *StopOption        `cmd:"" help:"Stop a task"`
 	Trace       *TraceOption       `cmd:"" help:"Trace a task"`
-	Exit        struct{}           `cmd:"" help:"Exit console" aliases:"quit"`
-	Help        struct{}           `cmd:"" help:"Show help"`
+
+	Exit  struct{} `cmd:"" help:"Exit console" aliases:"quit"`
+	Help  struct{} `cmd:"" help:"Show help"`
+	Reset struct{} `cmd:"" help:"Reset console"`
 }
 
 var consoleCompleter = readline.NewPrefixCompleter(
@@ -41,6 +44,7 @@ var consoleCompleter = readline.NewPrefixCompleter(
 	readline.PcItem("stop"),
 	readline.PcItem("trace"),
 	readline.PcItem("exit"),
+	readline.PcItem("reset"),
 	readline.PcItem("quit"),
 )
 
@@ -121,6 +125,8 @@ func (app *Ecsta) DispatchConsole(ctx context.Context, command string, console *
 	switch command {
 	case "exit", "quit":
 		return io.EOF
+	case "reset":
+		return exec.Command("reset").Run()
 	case "help":
 		return fmt.Errorf("use --help")
 	case "list":
