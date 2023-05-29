@@ -63,6 +63,10 @@ func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoComplete
 }
 
 func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
+	origCtx := ctx
+	ctx, cancel := context.WithCancel(origCtx)
+	defer cancel()
+
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
@@ -81,7 +85,10 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 		return err
 	}
 	defer s.ReadLine.Close()
-	s.ReadLine.CaptureExitSignal()
+	readline.CaptureExitSignal(func() {
+		cancel()
+		ctx, cancel = context.WithCancel(origCtx)
+	})
 
 	var console Console
 	var showHelp bool
@@ -111,6 +118,9 @@ INPUT:
 			break
 		}
 		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue INPUT
+		}
 		args, err := shellwords.Parse(line)
 		if err != nil {
 			log.Println("[error]", err)
