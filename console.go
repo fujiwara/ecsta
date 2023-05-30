@@ -37,14 +37,37 @@ type SelectClusterOption struct {
 }
 
 type ConsoleState struct {
-	Cluster  string
-	TaskID   string
-	ReadLine *readline.Instance
+	Cluster       string
+	TaskID        string
+	ReadLine      *readline.Instance
+	ClustersCache []string
+	TasksCache    []string
 }
 
-func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoCompleter {
+func (s *ConsoleState) Prompt() string {
+	var prompt string
+	if s.Cluster != "" {
+		prompt = s.Cluster
+	}
+	if s.TaskID != "" {
+		prompt = fmt.Sprintf("%s@%s", s.TaskID, s.Cluster)
+	}
+	return prompt + "> "
+}
+
+func (s *ConsoleState) Reset() {
+	s.Cluster = ""
+	s.TaskID = ""
+	s.ClustersCache = nil
+	s.TasksCache = nil
+}
+
+func (app *Ecsta) newConsoleCompleter(ctx context.Context, s *ConsoleState) readline.AutoCompleter {
 	return readline.NewPrefixCompleter(
 		readline.PcItem("cluster", readline.PcItemDynamic(func(line string) []string {
+			if s.ClustersCache != nil {
+				return s.ClustersCache
+			}
 			clusters, err := app.listClusters(ctx)
 			if err != nil {
 				log.Println("[error]", err)
@@ -53,6 +76,7 @@ func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoComplete
 			for _, cluster := range clusters {
 				names = append(names, arnToName(cluster))
 			}
+			s.ClustersCache = names
 			return names
 		})),
 		readline.PcItem("describe"),
@@ -67,6 +91,9 @@ func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoComplete
 		readline.PcItem("exit"),
 		readline.PcItem("quit"),
 		readline.PcItem("task", readline.PcItemDynamic(func(line string) []string {
+			if s.TasksCache != nil {
+				return s.TasksCache
+			}
 			tasks, err := app.listTasks(ctx, &optionListTasks{})
 			if err != nil {
 				log.Println("[error]", err)
@@ -75,6 +102,7 @@ func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoComplete
 			for _, task := range tasks {
 				names = append(names, arnToName(*task.TaskArn))
 			}
+			s.TasksCache = names
 			return names
 		})),
 	)
@@ -91,9 +119,9 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 
 	var err error
 	s.ReadLine, err = readline.NewEx(&readline.Config{
-		Prompt:            fmt.Sprintf("%s> ", app.cluster),
+		Prompt:            s.Prompt(),
 		HistoryFile:       filepath.Join(os.Getenv("HOME"), ".local/state/ecsta/history"),
-		AutoComplete:      app.newConsoleCompleter(ctx),
+		AutoComplete:      app.newConsoleCompleter(ctx, s),
 		InterruptPrompt:   "^C",
 		EOFPrompt:         "exit",
 		HistorySearchFold: true,
@@ -117,11 +145,7 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 
 INPUT:
 	for {
-		if s.TaskID == "" {
-			s.ReadLine.SetPrompt(fmt.Sprintf("%s> ", s.Cluster))
-		} else {
-			s.ReadLine.SetPrompt(fmt.Sprintf("%s@%s> ", s.TaskID, s.Cluster))
-		}
+		s.ReadLine.SetPrompt(s.Prompt())
 		showHelp = false
 
 		line, err := s.ReadLine.Readline()
@@ -220,16 +244,16 @@ func (app *Ecsta) RunSelectCluster(ctx context.Context, opt *SelectClusterOption
 		if err := app.SetCluster(ctx); err != nil {
 			return nil
 		}
+		s.Reset()
 		s.Cluster = app.cluster
-		s.TaskID = ""
 		return nil
 	} else {
 		c, err := app.getCluster(ctx, opt.ClusterName)
 		if err != nil {
 			return err
 		}
+		s.Reset()
 		s.Cluster = aws.ToString(c.ClusterName)
-		s.TaskID = ""
 		app.cluster = s.Cluster
 		return nil
 	}
