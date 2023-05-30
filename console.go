@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/chzyer/readline"
 	"github.com/mattn/go-shellwords"
 )
@@ -17,26 +18,43 @@ import (
 type ConsoleOption struct{}
 
 type Console struct {
-	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
-	Exec        *ExecOption        `cmd:"" help:"Execute a command on a task"`
-	List        *ListOption        `cmd:"" help:"List tasks" aliases:"ls"`
-	Logs        *LogsOption        `cmd:"" help:"Show log messages of a task"`
-	Portforward *PortforwardOption `cmd:"" help:"Forward a port of a task"`
-	SelectTask  *SelectTaskOption  `cmd:"" name:"task" help:"Select a task"`
-	Stop        *StopOption        `cmd:"" help:"Stop a task"`
-	Trace       *TraceOption       `cmd:"" help:"Trace a task"`
+	SelectCluster *SelectClusterOption `cmd:"" name:"cluster" optional:"" help:"Select a cluster"`
+	Describe      *DescribeOption      `cmd:"" help:"Describe tasks"`
+	Exec          *ExecOption          `cmd:"" help:"Execute a command on a task"`
+	List          *ListOption          `cmd:"" help:"List tasks" aliases:"ls"`
+	Logs          *LogsOption          `cmd:"" help:"Show log messages of a task"`
+	Portforward   *PortforwardOption   `cmd:"" help:"Forward a port of a task"`
+	SelectTask    *SelectTaskOption    `cmd:"" name:"task" help:"Select a task"`
+	Stop          *StopOption          `cmd:"" help:"Stop a task"`
+	Trace         *TraceOption         `cmd:"" help:"Trace a task"`
 
 	Exit struct{} `cmd:"" help:"Exit console" aliases:"quit"`
 	Help struct{} `cmd:"" help:"Show help"`
 }
 
+type SelectClusterOption struct {
+	ClusterName string `arg:"" help:"Cluster name"`
+}
+
 type ConsoleState struct {
+	Cluster  string
 	TaskID   string
 	ReadLine *readline.Instance
 }
 
 func (app *Ecsta) newConsoleCompleter(ctx context.Context) readline.AutoCompleter {
 	return readline.NewPrefixCompleter(
+		readline.PcItem("cluster", readline.PcItemDynamic(func(line string) []string {
+			clusters, err := app.listClusters(ctx)
+			if err != nil {
+				log.Println("[error]", err)
+			}
+			names := make([]string, 0, len(clusters))
+			for _, cluster := range clusters {
+				names = append(names, arnToName(cluster))
+			}
+			return names
+		})),
 		readline.PcItem("describe"),
 		readline.PcItem("exec"),
 		readline.PcItem("help"),
@@ -67,10 +85,9 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 	ctx, cancel := context.WithCancel(origCtx)
 	defer cancel()
 
-	if err := app.SetCluster(ctx); err != nil {
-		return err
+	s := &ConsoleState{
+		Cluster: app.cluster,
 	}
-	s := &ConsoleState{}
 
 	var err error
 	s.ReadLine, err = readline.NewEx(&readline.Config{
@@ -101,9 +118,9 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 INPUT:
 	for {
 		if s.TaskID == "" {
-			s.ReadLine.SetPrompt(fmt.Sprintf("%s> ", app.cluster))
+			s.ReadLine.SetPrompt(fmt.Sprintf("%s> ", s.Cluster))
 		} else {
-			s.ReadLine.SetPrompt(fmt.Sprintf("%s@%s> ", s.TaskID, app.cluster))
+			s.ReadLine.SetPrompt(fmt.Sprintf("%s@%s> ", s.TaskID, s.Cluster))
 		}
 		showHelp = false
 
@@ -152,12 +169,19 @@ func (app *Ecsta) DispatchConsole(ctx context.Context, command string, console *
 		return io.EOF
 	case "help":
 		return fmt.Errorf("use --help")
+	case "cluster":
+		return app.RunSelectCluster(ctx, console.SelectCluster, s)
+	}
+	if s.Cluster == "" {
+		return fmt.Errorf("no cluster is selected. use `cluster` command")
+	}
+
+	switch command {
 	case "list":
 		return app.RunList(ctx, console.List)
 	case "task":
 		return app.RunSelectTask(ctx, console.SelectTask, s)
 	}
-
 	if s.TaskID == "" {
 		return fmt.Errorf("no task is selected. use `task` command")
 	}
@@ -189,6 +213,26 @@ type SelectTaskOption struct {
 	TaskID  string  `arg:"" optional:"" help:"task ID or prefix"`
 	Family  *string `help:"task definition family name"`
 	Service *string `help:"ECS service name"`
+}
+
+func (app *Ecsta) RunSelectCluster(ctx context.Context, opt *SelectClusterOption, s *ConsoleState) error {
+	if opt.ClusterName == "" {
+		if err := app.SetCluster(ctx); err != nil {
+			return nil
+		}
+		s.Cluster = app.cluster
+		s.TaskID = ""
+		return nil
+	} else {
+		c, err := app.getCluster(ctx, opt.ClusterName)
+		if err != nil {
+			return err
+		}
+		s.Cluster = aws.ToString(c.ClusterName)
+		s.TaskID = ""
+		app.cluster = s.Cluster
+		return nil
+	}
 }
 
 func (app *Ecsta) RunSelectTask(ctx context.Context, opt *SelectTaskOption, s *ConsoleState) error {
