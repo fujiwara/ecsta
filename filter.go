@@ -3,6 +3,7 @@ package ecsta
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -12,16 +13,16 @@ import (
 	"github.com/Songmu/prompter"
 )
 
-func (app *Ecsta) runFilter(src io.Reader, title string) (string, error) {
+func (app *Ecsta) runFilter(ctx context.Context, src io.Reader, title string) (string, error) {
 	command := app.Config.Get("filter_command")
 	if command == "" {
-		return runInternalFilter(src, title)
+		return runInternalFilter(ctx, src, title)
 	}
 	var f *exec.Cmd
 	if strings.Contains(command, " ") {
-		f = exec.Command("sh", "-c", command)
+		f = exec.CommandContext(ctx, "sh", "-c", command)
 	} else {
-		f = exec.Command(command)
+		f = exec.CommandContext(ctx, command)
 	}
 	f.Stderr = os.Stderr
 	p, _ := f.StdinPipe()
@@ -36,7 +37,7 @@ func (app *Ecsta) runFilter(src io.Reader, title string) (string, error) {
 	return string(bytes.TrimRight(b, "\r\n")), nil
 }
 
-func runInternalFilter(src io.Reader, title string) (string, error) {
+func runInternalFilter(ctx context.Context, src io.Reader, title string) (string, error) {
 	var items []string
 	s := bufio.NewScanner(src)
 	for s.Scan() {
@@ -44,31 +45,46 @@ func runInternalFilter(src io.Reader, title string) (string, error) {
 		items = append(items, strings.Fields(s.Text())[0])
 	}
 
-	var input string
-	for {
-		input = prompter.Prompt("Enter "+title, "")
-		if input == "" {
-			continue
-		}
-		var found []string
-		for _, item := range items {
-			item := item
-			if item == input {
-				found = []string{item}
-				break
-			} else if strings.HasPrefix(item, input) {
-				found = append(found, item)
+	result := make(chan string)
+	go func() {
+		var input string
+		for {
+			input = prompter.Prompt("Enter "+title, "")
+			if input == "" {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+				continue
+			}
+			var found []string
+			for _, item := range items {
+				item := item
+				if item == input {
+					found = []string{item}
+					break
+				} else if strings.HasPrefix(item, input) {
+					found = append(found, item)
+				}
+			}
+
+			switch len(found) {
+			case 0:
+				fmt.Printf("no such item %s\n", input)
+			case 1:
+				fmt.Printf("%s=%s\n", title, found[0])
+				result <- found[0]
+				return
+			default:
+				fmt.Printf("%s is ambiguous\n", input)
 			}
 		}
-
-		switch len(found) {
-		case 0:
-			fmt.Printf("no such item %s\n", input)
-		case 1:
-			fmt.Printf("%s=%s\n", title, found[0])
-			return found[0], nil
-		default:
-			fmt.Printf("%s is ambiguous\n", input)
-		}
+	}()
+	select {
+	case <-ctx.Done():
+		return "", ErrAborted
+	case r := <-result:
+		return r, nil
 	}
 }
