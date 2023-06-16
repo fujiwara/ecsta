@@ -148,7 +148,7 @@ func (app *Ecsta) selectCluster(ctx context.Context) (string, error) {
 	for _, cluster := range clusters {
 		fmt.Fprintln(buf, arnToName(cluster))
 	}
-	res, err := app.runFilter(buf, "cluster name")
+	res, err := app.runFilter(ctx, buf, "cluster name")
 	if err != nil {
 		return "", fmt.Errorf("failed to run filter: %w", err)
 	}
@@ -160,7 +160,7 @@ func (app *Ecsta) selectByFilter(ctx context.Context, src []string, title string
 	for _, s := range src {
 		fmt.Fprintln(buf, s)
 	}
-	res, err := app.runFilter(buf, title)
+	res, err := app.runFilter(ctx, buf, title)
 	if err != nil {
 		return "", fmt.Errorf("failed to run filter: %w", err)
 	}
@@ -219,9 +219,12 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 		f.AddTask(task)
 	}
 	f.Close()
-	res, err := app.runFilter(buf, "task ID")
+	res, err := app.runFilter(ctx, buf, "task ID")
 	if err != nil {
 		return types.Task{}, fmt.Errorf("failed to run filter: %w", err)
+	}
+	if res == "" {
+		return types.Task{}, fmt.Errorf("task not selected")
 	}
 	id := strings.SplitN(res, "\t", 2)[0]
 	for _, task := range tasks {
@@ -237,6 +240,9 @@ func (app *Ecsta) SetCluster(ctx context.Context) error {
 		cluster, err := app.selectCluster(ctx)
 		if err != nil {
 			return err
+		}
+		if cluster == "" {
+			return fmt.Errorf("cluster not selected")
 		}
 		app.cluster = cluster
 	}
