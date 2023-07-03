@@ -33,13 +33,12 @@ type Console struct {
 }
 
 type SelectClusterOption struct {
-	ClusterName string `arg:"" help:"Cluster name"`
+	ClusterName string `arg:"" help:"Cluster name" optional:""`
 }
 
 type ConsoleState struct {
 	Cluster       string
 	TaskID        string
-	ReadLine      *readline.Instance
 	ClustersCache []string
 	TasksCache    []string
 }
@@ -116,9 +115,8 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 	s := &ConsoleState{
 		Cluster: app.cluster,
 	}
-
-	var err error
-	s.ReadLine, err = readline.NewEx(&readline.Config{
+	showHelp := false
+	rd, err := readline.NewEx(&readline.Config{
 		Prompt:            s.Prompt(),
 		HistoryFile:       filepath.Join(os.Getenv("HOME"), ".local/state/ecsta/history"),
 		AutoComplete:      app.newConsoleCompleter(ctx, s),
@@ -129,14 +127,13 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 	if err != nil {
 		return err
 	}
-	defer s.ReadLine.Close()
+	defer rd.Close()
 	readline.CaptureExitSignal(func() {
 		cancel()
 		ctx, cancel = context.WithCancel(origCtx)
 	})
 
 	var console Console
-	var showHelp bool
 	parser, err := kong.New(&console, kong.Vars{"version": Version})
 	parser.Exit = func(int) { showHelp = true }
 	if err != nil {
@@ -145,37 +142,46 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 
 INPUT:
 	for {
-		s.ReadLine.SetPrompt(s.Prompt())
+		rd.SetPrompt(s.Prompt())
 		showHelp = false
 
-		line, err := s.ReadLine.Readline()
-		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
-				break
-			} else {
-				continue
+		line, err := rd.Readline()
+		if err != nil {
+			switch err {
+			case readline.ErrInterrupt:
+				if len(line) == 0 {
+					break INPUT
+				} else {
+					continue INPUT
+				}
+			case io.EOF:
+				break INPUT
+			default:
+				log.Println("[error]", err)
 			}
-		} else if err == io.EOF {
-			break
+			continue INPUT
 		}
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
-			continue INPUT
+			continue
 		}
 		args, err := shellwords.Parse(line)
 		if err != nil {
 			log.Println("[error]", err)
-			continue INPUT
+			continue
+		}
+		if len(args) == 1 && args[0] == "help" {
+			// workaround for kong
+			args[0] = "--help"
 		}
 		kctx, err := parser.Parse(args)
 		if err != nil {
 			log.Println("[error]", err)
-			continue INPUT
+			continue
 		}
 		cmd := strings.Fields(kctx.Command())[0]
 		if showHelp {
-			log.Println("[debug]", cmd, showHelp)
-			continue INPUT
+			continue
 		}
 		if err := app.DispatchConsole(ctx, cmd, &console, s); err != nil {
 			if err == io.EOF {
