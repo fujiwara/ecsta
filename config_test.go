@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/fujiwara/ecsta"
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestConfig(t *testing.T) {
@@ -25,6 +26,12 @@ func TestConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	names := conf.Names()
+	if d := cmp.Diff(names, []string{"filter_command", "output", "task_format_query"}); d != "" {
+		t.Errorf("unexpected config names: %s", d)
+	}
+
 	for _, key := range []string{"filter_command", "output", "task_format_query"} {
 		if conf.Get(key) != strings.ToUpper(key) {
 			t.Errorf("unexpected config %s value: %s", key, conf.Get(key))

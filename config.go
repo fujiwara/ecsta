@@ -36,6 +36,14 @@ func (c Config) Set(name, value string) {
 	panic(fmt.Errorf("config element %s not defined", name))
 }
 
+func (c Config) Names() []string {
+	r := make([]string, 0, len(ConfigElements))
+	for _, elm := range ConfigElements {
+		r = append(r, elm.Name)
+	}
+	return r
+}
+
 type ConfigElement struct {
 	Name        string `json:"name"`
 	Description string `json:"help"`
