@@ -60,19 +60,32 @@ var ConfigElements = []ConfigElement{
 	},
 }
 
-var configDir string
-
-const configSubdir = "ecsta"
+var xdg = struct {
+	ConfigDir string
+	StateDir  string
+	Subdir    string
+}{
+	Subdir: "ecsta",
+}
 
 func init() {
 	if h := os.Getenv("XDG_CONFIG_HOME"); h != "" {
-		configDir = filepath.Join(h, configSubdir)
+		xdg.ConfigDir = filepath.Join(h, xdg.Subdir)
 	} else {
 		d, err := os.UserHomeDir()
 		if err != nil {
 			d = os.Getenv("HOME")
 		}
-		configDir = filepath.Join(d, ".config", configSubdir)
+		xdg.ConfigDir = filepath.Join(d, ".config", xdg.Subdir)
+	}
+	if h := os.Getenv("XDG_STATE_HOME"); h != "" {
+		xdg.StateDir = filepath.Join(h, xdg.Subdir)
+	} else {
+		d, err := os.UserHomeDir()
+		if err != nil {
+			d = os.Getenv("HOME")
+		}
+		xdg.StateDir = filepath.Join(d, ".local", "state", xdg.Subdir)
 	}
 }
 
@@ -83,7 +96,7 @@ func newConfig() Config {
 }
 
 func configFilePath() string {
-	return filepath.Join(configDir, "config.json")
+	return filepath.Join(xdg.ConfigDir, "config.json")
 }
 
 func loadConfig() (Config, error) {
@@ -132,9 +145,9 @@ func reConfigure(config Config) error {
 
 func saveConfig(config Config) error {
 	p := configFilePath()
-	if _, err := os.Stat(configDir); err != nil {
+	if _, err := os.Stat(xdg.ConfigDir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(configDir, 0755); err != nil {
+			if err := os.MkdirAll(xdg.ConfigDir, 0755); err != nil {
 				return fmt.Errorf("failed to create config directory: %w", err)
 			}
 		} else {
@@ -154,5 +167,18 @@ func saveConfig(config Config) error {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 	log.Println("Saved configuration file:", configFilePath())
+	return nil
+}
+
+func prepareConsoleHistory() error {
+	if _, err := os.Stat(xdg.StateDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(xdg.StateDir, 0711); err != nil {
+				return fmt.Errorf("failed to create config directory: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to stat config directory: %w", err)
+		}
+	}
 	return nil
 }

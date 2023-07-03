@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -112,13 +111,17 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 	ctx, cancel := context.WithCancel(origCtx)
 	defer cancel()
 
+	if err := prepareConsoleHistory(); err != nil {
+		log.Println("[warn]", err)
+	}
+
 	s := &ConsoleState{
 		Cluster: app.cluster,
 	}
 	showHelp := false
 	rd, err := readline.NewEx(&readline.Config{
 		Prompt:            s.Prompt(),
-		HistoryFile:       filepath.Join(os.Getenv("HOME"), ".local/state/ecsta/history"),
+		HistoryFile:       filepath.Join(xdg.StateDir, "history"),
 		AutoComplete:      app.newConsoleCompleter(ctx, s),
 		InterruptPrompt:   "^C",
 		EOFPrompt:         "exit",
@@ -247,6 +250,7 @@ type SelectTaskOption struct {
 
 func (app *Ecsta) RunSelectCluster(ctx context.Context, opt *SelectClusterOption, s *ConsoleState) error {
 	if opt.ClusterName == "" {
+		app.cluster = ""
 		if err := app.SetCluster(ctx); err != nil {
 			return nil
 		}
