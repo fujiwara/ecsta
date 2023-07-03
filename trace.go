@@ -34,5 +34,6 @@ func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
 		Duration:    opt.Duration,
 		SNSTopicArn: opt.SNSTopicArn,
 	}
+	tr.SetOutput(app.w)
 	return tr.Run(ctx, app.cluster, *task.TaskArn, tracerOpt)
 }

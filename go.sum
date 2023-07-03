@@ -55,8 +55,8 @@ github.com/chzyer/test v1.0.0/go.mod h1:2JlltgoNkt4TW/z9V/IzDdFaMTM2JPIi26O1pF38
 github.com/crackcomm/go-clitable v0.0.0-20151121230230-53bcff2fea36/go.mod h1:XiV36mPegOHv+dlkCSCazuGdQR2BUTgIZ2FKqTTHles=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
-github.com/fujiwara/tracer v1.0.0-pre h1:fsIypRJWQ5L8soiCD2xlUdHif7tTQZcnAehpPBNR1Dw=
-github.com/fujiwara/tracer v1.0.0-pre/go.mod h1:r2QzBEBNsW9OhmoVdmTANG+GEmxWNZk7317/mnW2yIw=
+github.com/fujiwara/tracer v1.0.1 h1:gfH3woSI7+Don7pgatEllWqAzhP22y5LUFhylSFtDSE=
+github.com/fujiwara/tracer v1.0.1/go.mod h1:r2QzBEBNsW9OhmoVdmTANG+GEmxWNZk7317/mnW2yIw=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUqJM=

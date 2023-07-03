@@ -15,7 +15,7 @@ type CLI struct {
 	TaskFormatQuery string `help:"A jq query to format task in selector" short:"q" env:"ECSTA_TASK_FORMAT_QUERY"`
 
 	Configure   *ConfigureOption   `cmd:"" help:"Create a configuration file of ecsta"`
-	Console     *ConsoleOption     `cmd:"" help:"Open a console"`
+	Console     *ConsoleOption     `cmd:"" help:"Open a console" aliases:"c"`
 	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
 	Exec        *ExecOption        `cmd:"" help:"Execute a command on a task"`
 	List        *ListOption        `cmd:"" help:"List tasks"`

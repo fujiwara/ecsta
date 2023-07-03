@@ -1,11 +1,14 @@
 package ecsta
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -27,6 +30,8 @@ type Console struct {
 	Stop          *StopOption          `cmd:"" help:"Stop a task"`
 	Trace         *TraceOption         `cmd:"" help:"Trace a task"`
 
+	Save *ConsoleSaveOption `cmd:"" help:"Save current output"`
+
 	Exit struct{} `cmd:"" help:"Exit console" aliases:"quit"`
 	Help struct{} `cmd:"" help:"Show help"`
 }
@@ -40,6 +45,8 @@ type ConsoleState struct {
 	TaskID        string
 	ClustersCache []string
 	TasksCache    []string
+
+	Buffer *bytes.Buffer
 }
 
 func (s *ConsoleState) Prompt() string {
@@ -103,6 +110,30 @@ func (app *Ecsta) newConsoleCompleter(ctx context.Context, s *ConsoleState) read
 			s.TasksCache = names
 			return names
 		})),
+		readline.PcItem("save", readline.PcItemDynamic(func(line string) []string {
+			line = strings.TrimPrefix(line, "save")
+			line = strings.TrimLeft(line, " ")
+			d := "."
+			if strings.Contains(line, "/") {
+				d = filepath.Dir(line)
+			}
+			files, err := os.ReadDir(d)
+			if err != nil {
+				log.Println("[error]", err, "for", d)
+			}
+			var names []string
+			for _, file := range files {
+				if file.IsDir() {
+					names = append(names, filepath.Join(d, file.Name())+"/")
+				} else {
+					names = append(names, filepath.Join(d, file.Name()))
+				}
+			}
+			sort.SliceStable(names, func(i, j int) bool {
+				return strings.Compare(names[i], names[j]) < 0
+			})
+			return names
+		})),
 	)
 }
 
@@ -117,7 +148,10 @@ func (app *Ecsta) RunConsole(ctx context.Context, opt *ConsoleOption) error {
 
 	s := &ConsoleState{
 		Cluster: app.cluster,
+		Buffer:  new(bytes.Buffer),
 	}
+	app.w = io.MultiWriter(app.w, s.Buffer)
+
 	showHelp := false
 	rd, err := readline.NewEx(&readline.Config{
 		Prompt:            s.Prompt(),
@@ -198,6 +232,11 @@ INPUT:
 
 func (app *Ecsta) DispatchConsole(ctx context.Context, command string, console *Console, s *ConsoleState) error {
 	switch command {
+	case "save":
+		return app.RunConsoleSave(ctx, console.Save, s)
+	}
+
+	switch command {
 	case "exit", "quit":
 		return io.EOF
 	case "help":
@@ -208,6 +247,8 @@ func (app *Ecsta) DispatchConsole(ctx context.Context, command string, console *
 	if s.Cluster == "" {
 		return fmt.Errorf("no cluster is selected. use `cluster` command")
 	}
+
+	s.Buffer.Reset()
 
 	switch command {
 	case "list":
@@ -309,4 +350,34 @@ func (app *Ecsta) RunSelectTask(ctx context.Context, opt *SelectTaskOption, s *C
 			return fmt.Errorf("[error] taskID %s is ambiguous", opt.TaskID)
 		}
 	}
+}
+
+type ConsoleSaveOption struct {
+	Output string `arg:"" help:"output file path" default:"-"`
+}
+
+func (app *Ecsta) RunConsoleSave(ctx context.Context, opt *ConsoleSaveOption, s *ConsoleState) error {
+	r := bytes.NewReader(s.Buffer.Bytes())
+	log.Println("[info] save to", opt.Output)
+	var w io.Writer
+	if opt.Output == "-" {
+		w = os.Stdout
+	} else {
+		f, err := os.Create(opt.Output)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		w = f
+	}
+	if n, err := r.WriteTo(w); err != nil {
+		return err
+	} else {
+		log.Println("[info] saved", n, "bytes")
+	}
+	return nil
+}
+
+type ConsoleOutput struct {
+	Format string `arg:"" help:"output format" default:"text" enum:"text,json"`
 }
