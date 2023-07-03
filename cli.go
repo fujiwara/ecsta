@@ -26,6 +26,8 @@ type CLI struct {
 }
 
 func RunCLI(ctx context.Context, args []string) error {
+	setConfigDir()
+
 	var cli CLI
 	parser, err := kong.New(&cli, kong.Vars{"version": Version})
 	if err != nil {

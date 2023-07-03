@@ -64,7 +64,7 @@ var configDir string
 
 const configSubdir = "ecsta"
 
-func init() {
+func setConfigDir() {
 	if h := os.Getenv("XDG_CONFIG_HOME"); h != "" {
 		configDir = filepath.Join(h, configSubdir)
 	} else {
