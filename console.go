@@ -377,7 +377,3 @@ func (app *Ecsta) RunConsoleSave(ctx context.Context, opt *ConsoleSaveOption, s 
 	}
 	return nil
 }
-
-type ConsoleOutput struct {
-	Format string `arg:"" help:"output format" default:"text" enum:"text,json"`
-}
