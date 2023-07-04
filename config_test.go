@@ -1,9 +1,7 @@
 package ecsta_test
 
 import (
-	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/fujiwara/ecsta"
@@ -15,9 +13,9 @@ func TestConfig(t *testing.T) {
 	ecsta.SetConfigDir()
 
 	if err := os.WriteFile("testdata/config/ecsta/config.json", []byte(`{
-	"filter_command": "FILTER_COMMAND",
-	"output": "OUTPUT",
-	"task_format_query": "TASK_FORMAT_QUERY"
+	"filter_command": "peco",
+	"output": "",
+	"task_format_query": ".id"
 	}`), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -32,12 +30,20 @@ func TestConfig(t *testing.T) {
 		t.Errorf("unexpected config names: %s", d)
 	}
 
-	for _, key := range []string{"filter_command", "output", "task_format_query"} {
-		if conf.Get(key) != strings.ToUpper(key) {
-			t.Errorf("unexpected config %s value: %s", key, conf.Get(key))
-		}
-		conf.Set(key, fmt.Sprintf("value of %s", key))
+	if conf.Get("filter_command") != "peco" {
+		t.Errorf("unexpected config filter_command value: %s", conf.Get("filter_command"))
 	}
+	if conf.Get("output") != "table" { // defualt value
+		t.Errorf("unexpected config output value: %s", conf.Get("output"))
+	}
+	if conf.Get("task_format_query") != ".id" {
+		t.Errorf("unexpected config task_format_query value: %s", conf.Get("task_format_query"))
+	}
+
+	conf.Set("filter_command", "fzf")
+	conf.Set("output", "tsv")
+	conf.Set("task_format_query", ".name")
+
 	if err := ecsta.SaveConfig(conf); err != nil {
 		t.Fatal(err)
 	}
@@ -46,9 +52,13 @@ func TestConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"filter_command", "output", "task_format_query"} {
-		if conf.Get(key) != fmt.Sprintf("value of %s", key) {
-			t.Errorf("unexpected config %s value: %s", key, conf.Get(key))
-		}
+	if conf.Get("filter_command") != "fzf" {
+		t.Errorf("unexpected config filter_command value: %s", conf.Get("filter_command"))
+	}
+	if conf.Get("output") != "tsv" {
+		t.Errorf("unexpected config output value: %s", conf.Get("output"))
+	}
+	if conf.Get("task_format_query") != ".name" {
+		t.Errorf("unexpected config task_format_query value: %s", conf.Get("task_format_query"))
 	}
 }
