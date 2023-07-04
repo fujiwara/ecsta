@@ -6,18 +6,98 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 
 	"github.com/Songmu/prompter"
 )
 
-type Config map[string]string
+type Config interface {
+	String() string
+	Get(string) string
+	Set(string, string)
+	Names() []string
 
-func (c Config) String() string {
+	fillDefault()
+	OverrideCLI(*CLI)
+}
+
+type MapConfig map[string]string
+
+type StructConfig struct {
+	FilterCommand   string `help:"command to run to filter messages" json:"filter_command"`
+	Output          string `help:"output format (table, tsv or json)" enum:"table,tsv,json" default:"table" json:"output"`
+	TaskFormatQuery string `help:"A jq query to format task in selector" json:"task_format_query"`
+}
+
+func (c *StructConfig) String() string {
 	b, _ := json.MarshalIndent(c, "", "  ")
 	return string(b)
 }
 
-func (c Config) Get(name string) string {
+func (c *StructConfig) Get(name string) string {
+	v := reflect.ValueOf(c).Elem()
+	name = strings.ToLower(name)
+
+	for i := 0; i < v.NumField(); i++ {
+		if v.Type().Field(i).Tag.Get("json") == name {
+			return v.Field(i).String()
+		}
+	}
+	panic(fmt.Errorf("config element %s not defined", name))
+}
+
+func (c *StructConfig) Set(name, value string) {
+	v := reflect.ValueOf(c).Elem()
+	name = strings.ToLower(name)
+
+	for i := 0; i < v.NumField(); i++ {
+		if v.Type().Field(i).Tag.Get("json") == name {
+			if v.Field(i).CanSet() {
+				v.Field(i).SetString(value)
+				return // success
+			}
+		}
+	}
+	panic(fmt.Errorf("config element %s not defined or not settable", name))
+}
+
+func (c *StructConfig) fillDefault() {
+	v := reflect.ValueOf(c).Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		if v.Field(i).String() == "" {
+			v.Field(i).SetString(v.Type().Field(i).Tag.Get("default"))
+		}
+	}
+}
+
+func (c StructConfig) Names() []string {
+	v := reflect.ValueOf(c)
+	var names []string
+
+	for i := 0; i < v.NumField(); i++ {
+		name := v.Type().Field(i).Tag.Get("json")
+		names = append(names, name)
+	}
+	return names
+}
+
+func (config *StructConfig) OverrideCLI(cli *CLI) {
+	if cli.Output != "" {
+		config.Set("output", cli.Output)
+	}
+	if cli.TaskFormatQuery != "" {
+		config.Set("task_format_query", cli.TaskFormatQuery)
+	}
+}
+
+func (c MapConfig) String() string {
+	b, _ := json.MarshalIndent(c, "", "  ")
+	return string(b)
+}
+
+func (c MapConfig) Get(name string) string {
 	for _, elm := range ConfigElements {
 		if elm.Name == name {
 			return c[name]
@@ -26,7 +106,7 @@ func (c Config) Get(name string) string {
 	panic(fmt.Errorf("config element %s not defined", name))
 }
 
-func (c Config) Set(name, value string) {
+func (c MapConfig) Set(name, value string) {
 	for _, elm := range ConfigElements {
 		if elm.Name == name {
 			c[name] = value
@@ -36,12 +116,29 @@ func (c Config) Set(name, value string) {
 	panic(fmt.Errorf("config element %s not defined", name))
 }
 
-func (c Config) Names() []string {
+func (c MapConfig) Names() []string {
 	r := make([]string, 0, len(ConfigElements))
 	for _, elm := range ConfigElements {
 		r = append(r, elm.Name)
 	}
 	return r
+}
+
+func (config MapConfig) fillDefault() {
+	for _, elm := range ConfigElements {
+		if config[elm.Name] == "" && elm.Default != "" {
+			config[elm.Name] = elm.Default
+		}
+	}
+}
+
+func (config MapConfig) OverrideCLI(cli *CLI) {
+	if cli.Output != "" {
+		config.Set("output", cli.Output)
+	}
+	if cli.TaskFormatQuery != "" {
+		config.Set("task_format_query", cli.TaskFormatQuery)
+	}
 }
 
 type ConfigElement struct {
@@ -85,7 +182,7 @@ func setConfigDir() {
 }
 
 func newConfig() Config {
-	config := Config{}
+	config := MapConfig{}
 	config.fillDefault()
 	return config
 }
@@ -102,21 +199,13 @@ func loadConfig() (Config, error) {
 	return newConfig(), nil
 }
 
-func (config Config) fillDefault() {
-	for _, elm := range ConfigElements {
-		if config[elm.Name] == "" && elm.Default != "" {
-			config[elm.Name] = elm.Default
-		}
-	}
-}
-
 func loadConfigFile() (Config, error) {
 	p := configFilePath()
 	jsonStr, err := os.ReadFile(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	var config Config
+	var config MapConfig
 	if err := json.Unmarshal([]byte(jsonStr), &config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %w", p, err)
 	}
@@ -125,7 +214,7 @@ func loadConfigFile() (Config, error) {
 
 func reConfigure(config Config) error {
 	log.Println("configuration file:", configFilePath())
-	newConfig := Config{}
+	newConfig := MapConfig{}
 
 	for _, elm := range ConfigElements {
 		current := config.Get(elm.Name)

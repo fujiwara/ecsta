@@ -70,12 +70,3 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 	}
 	return fmt.Errorf("unknown command: %s", command)
 }
-
-func (config Config) OverrideCLI(cli *CLI) {
-	if cli.Output != "" {
-		config.Set("output", cli.Output)
-	}
-	if cli.TaskFormatQuery != "" {
-		config.Set("task_format_query", cli.TaskFormatQuery)
-	}
-}
