@@ -123,6 +123,19 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 	}), nil
 }
 
+func (app *Ecsta) getCluster(ctx context.Context, name string) (*types.Cluster, error) {
+	out, err := app.ecs.DescribeClusters(ctx, &ecs.DescribeClustersInput{
+		Clusters: []string{name},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(out.Clusters) == 0 {
+		return nil, fmt.Errorf("cluster %s not found", name)
+	}
+	return &out.Clusters[0], nil
+}
+
 func (app *Ecsta) listClusters(ctx context.Context) ([]string, error) {
 	clusters := []string{}
 	tp := ecs.NewListClustersPaginator(app.ecs, &ecs.ListClustersInput{})

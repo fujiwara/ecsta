@@ -15,6 +15,7 @@ type CLI struct {
 	TaskFormatQuery string `help:"A jq query to format task in selector" short:"q" env:"ECSTA_TASK_FORMAT_QUERY"`
 
 	Configure   *ConfigureOption   `cmd:"" help:"Create a configuration file of ecsta"`
+	Console     *ConsoleOption     `cmd:"" help:"Open a console" aliases:"c"`
 	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
 	Exec        *ExecOption        `cmd:"" help:"Execute a command on a task"`
 	List        *ListOption        `cmd:"" help:"List tasks"`
@@ -50,6 +51,8 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 	switch command {
 	case "configure":
 		return app.RunConfigure(ctx, cli.Configure)
+	case "console":
+		return app.RunConsole(ctx, cli.Console)
 	case "describe":
 		return app.RunDescribe(ctx, cli.Describe)
 	case "exec":

@@ -135,6 +135,11 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	}
 FOLLOW:
 	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
 		if nextToken != nil {
 			in = &cloudwatchlogs.GetLogEventsInput{
 				LogGroupName:  &opt.logGroup,
