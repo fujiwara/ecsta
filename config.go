@@ -17,17 +17,29 @@ type Config interface {
 	Get(string) string
 	Set(string, string)
 	Names() []string
+	ConfigElements() []ConfigElement
 
 	fillDefault()
 	OverrideCLI(*CLI)
 }
 
-type MapConfig map[string]string
-
 type StructConfig struct {
 	FilterCommand   string `help:"command to run to filter messages" json:"filter_command"`
 	Output          string `help:"output format (table, tsv or json)" enum:"table,tsv,json" default:"table" json:"output"`
 	TaskFormatQuery string `help:"A jq query to format task in selector" json:"task_format_query"`
+}
+
+func (c *StructConfig) ConfigElements() []ConfigElement {
+	v := reflect.ValueOf(c).Elem()
+	elements := make([]ConfigElement, v.NumField())
+	for i := 0; i < v.NumField(); i++ {
+		elements[i] = ConfigElement{
+			Name:        v.Type().Field(i).Tag.Get("json"),
+			Description: v.Type().Field(i).Tag.Get("help"),
+			Default:     v.Type().Field(i).Tag.Get("default"),
+		}
+	}
+	return elements
 }
 
 func (c *StructConfig) String() string {
@@ -92,13 +104,19 @@ func (config *StructConfig) OverrideCLI(cli *CLI) {
 	}
 }
 
+type MapConfig map[string]string
+
+func (c MapConfig) ConfigElements() []ConfigElement {
+	return ConfigElements
+}
+
 func (c MapConfig) String() string {
 	b, _ := json.MarshalIndent(c, "", "  ")
 	return string(b)
 }
 
 func (c MapConfig) Get(name string) string {
-	for _, elm := range ConfigElements {
+	for _, elm := range c.ConfigElements() {
 		if elm.Name == name {
 			return c[name]
 		}
@@ -107,7 +125,7 @@ func (c MapConfig) Get(name string) string {
 }
 
 func (c MapConfig) Set(name, value string) {
-	for _, elm := range ConfigElements {
+	for _, elm := range c.ConfigElements() {
 		if elm.Name == name {
 			c[name] = value
 			return
@@ -117,17 +135,17 @@ func (c MapConfig) Set(name, value string) {
 }
 
 func (c MapConfig) Names() []string {
-	r := make([]string, 0, len(ConfigElements))
+	r := make([]string, 0, len(c.ConfigElements()))
 	for _, elm := range ConfigElements {
 		r = append(r, elm.Name)
 	}
 	return r
 }
 
-func (config MapConfig) fillDefault() {
-	for _, elm := range ConfigElements {
-		if config[elm.Name] == "" && elm.Default != "" {
-			config[elm.Name] = elm.Default
+func (c MapConfig) fillDefault() {
+	for _, elm := range c.ConfigElements() {
+		if c[elm.Name] == "" && elm.Default != "" {
+			c[elm.Name] = elm.Default
 		}
 	}
 }
@@ -205,7 +223,7 @@ func loadConfigFile() (Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	var config MapConfig
+	config := MapConfig{}
 	if err := json.Unmarshal([]byte(jsonStr), &config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %w", p, err)
 	}
@@ -214,17 +232,17 @@ func loadConfigFile() (Config, error) {
 
 func reConfigure(config Config) error {
 	log.Println("configuration file:", configFilePath())
-	newConfig := MapConfig{}
+	conf := MapConfig{}
 
-	for _, elm := range ConfigElements {
+	for _, elm := range config.ConfigElements() {
 		current := config.Get(elm.Name)
 		input := prompter.Prompt(
 			fmt.Sprintf("Enter %s (%s)", elm.Name, elm.Description),
 			current,
 		)
-		newConfig.Set(elm.Name, input)
+		conf.Set(elm.Name, input)
 	}
-	return saveConfig(newConfig)
+	return saveConfig(conf)
 }
 
 func saveConfig(config Config) error {
