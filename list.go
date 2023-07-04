@@ -22,10 +22,10 @@ func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
 		return fmt.Errorf("failed to list tasks in cluster %s: %w", app.cluster, err)
 	}
 	fopt := formatterOption{
-		Format:    app.Config.Get("output"),
+		Format:    app.Config.Output,
 		HasHeader: true,
 	}
-	if query := app.Config.Get("task_format_query"); query != "" {
+	if query := app.Config.TaskFormatQuery; query != "" {
 		fopt.Format = "json"
 		fopt.Query = query
 	}

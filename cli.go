@@ -27,6 +27,8 @@ type CLI struct {
 }
 
 func RunCLI(ctx context.Context, args []string) error {
+	setConfigDir()
+
 	var cli CLI
 	parser, err := kong.New(&cli, kong.Vars{"version": Version})
 	if err != nil {
@@ -70,13 +72,4 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 		return nil
 	}
 	return fmt.Errorf("unknown command: %s", command)
-}
-
-func (config Config) OverrideCLI(cli *CLI) {
-	if cli.Output != "" {
-		config.Set("output", cli.Output)
-	}
-	if cli.TaskFormatQuery != "" {
-		config.Set("task_format_query", cli.TaskFormatQuery)
-	}
 }
