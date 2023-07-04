@@ -104,83 +104,10 @@ func (config *StructConfig) OverrideCLI(cli *CLI) {
 	}
 }
 
-type MapConfig map[string]string
-
-func (c MapConfig) ConfigElements() []ConfigElement {
-	return ConfigElements
-}
-
-func (c MapConfig) String() string {
-	b, _ := json.MarshalIndent(c, "", "  ")
-	return string(b)
-}
-
-func (c MapConfig) Get(name string) string {
-	for _, elm := range c.ConfigElements() {
-		if elm.Name == name {
-			return c[name]
-		}
-	}
-	panic(fmt.Errorf("config element %s not defined", name))
-}
-
-func (c MapConfig) Set(name, value string) {
-	for _, elm := range c.ConfigElements() {
-		if elm.Name == name {
-			c[name] = value
-			return
-		}
-	}
-	panic(fmt.Errorf("config element %s not defined", name))
-}
-
-func (c MapConfig) Names() []string {
-	r := make([]string, 0, len(c.ConfigElements()))
-	for _, elm := range ConfigElements {
-		r = append(r, elm.Name)
-	}
-	return r
-}
-
-func (c MapConfig) fillDefault() {
-	for _, elm := range c.ConfigElements() {
-		if c[elm.Name] == "" && elm.Default != "" {
-			c[elm.Name] = elm.Default
-		}
-	}
-}
-
-func (config MapConfig) OverrideCLI(cli *CLI) {
-	if cli.Output != "" {
-		config.Set("output", cli.Output)
-	}
-	if cli.TaskFormatQuery != "" {
-		config.Set("task_format_query", cli.TaskFormatQuery)
-	}
-}
-
 type ConfigElement struct {
 	Name        string `json:"name"`
 	Description string `json:"help"`
 	Default     string `json:"default"`
-}
-
-var ConfigElements = []ConfigElement{
-	{
-		Name:        "filter_command",
-		Description: "command to run to filter messages",
-		Default:     "",
-	},
-	{
-		Name:        "output",
-		Description: "output format (table, tsv or json)",
-		Default:     "table",
-	},
-	{
-		Name:        "task_format_query",
-		Description: "A jq query to format task in selector",
-		Default:     "",
-	},
 }
 
 var configDir string
