@@ -200,7 +200,7 @@ func setConfigDir() {
 }
 
 func newConfig() Config {
-	config := MapConfig{}
+	config := &StructConfig{}
 	config.fillDefault()
 	return config
 }
@@ -223,8 +223,8 @@ func loadConfigFile() (Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	config := MapConfig{}
-	if err := json.Unmarshal([]byte(jsonStr), &config); err != nil {
+	config := &StructConfig{}
+	if err := json.Unmarshal([]byte(jsonStr), config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %w", p, err)
 	}
 	return config, nil
@@ -232,7 +232,7 @@ func loadConfigFile() (Config, error) {
 
 func reConfigure(config Config) error {
 	log.Println("configuration file:", configFilePath())
-	conf := MapConfig{}
+	conf := &StructConfig{}
 
 	for _, elm := range config.ConfigElements() {
 		current := config.Get(elm.Name)
