@@ -207,7 +207,7 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 		HasHeader:    false,
 		AppendTaskID: true,
 	} // default
-	if query := app.Config.Get("task_format_query"); query != "" {
+	if query := app.Config.TaskFormatQuery; query != "" {
 		fopt.Format = "json"
 		fopt.Query = query
 	}

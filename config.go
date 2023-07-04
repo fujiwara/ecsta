@@ -86,10 +86,10 @@ func (c *Config) Names() []string {
 
 func (c *Config) OverrideCLI(cli *CLI) {
 	if cli.Output != "" {
-		c.Set("output", cli.Output)
+		c.Output = cli.Output
 	}
 	if cli.TaskFormatQuery != "" {
-		c.Set("task_format_query", cli.TaskFormatQuery)
+		c.TaskFormatQuery = cli.TaskFormatQuery
 	}
 }
 
