@@ -22,7 +22,7 @@ var ErrAborted = errors.New("Aborted")
 var Version string
 
 type Ecsta struct {
-	Config Config
+	Config *Config
 
 	region  string
 	cluster string

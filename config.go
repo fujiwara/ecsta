@@ -12,24 +12,13 @@ import (
 	"github.com/Songmu/prompter"
 )
 
-type Config interface {
-	String() string
-	Get(string) string
-	Set(string, string)
-	Names() []string
-	ConfigElements() []ConfigElement
-
-	fillDefault()
-	OverrideCLI(*CLI)
-}
-
-type StructConfig struct {
+type Config struct {
 	FilterCommand   string `help:"command to run to filter messages" json:"filter_command"`
 	Output          string `help:"output format (table, tsv or json)" enum:"table,tsv,json" default:"table" json:"output"`
 	TaskFormatQuery string `help:"A jq query to format task in selector" json:"task_format_query"`
 }
 
-func (c *StructConfig) ConfigElements() []ConfigElement {
+func (c *Config) ConfigElements() []ConfigElement {
 	v := reflect.ValueOf(c).Elem()
 	elements := make([]ConfigElement, v.NumField())
 	for i := 0; i < v.NumField(); i++ {
@@ -42,12 +31,12 @@ func (c *StructConfig) ConfigElements() []ConfigElement {
 	return elements
 }
 
-func (c *StructConfig) String() string {
+func (c *Config) String() string {
 	b, _ := json.MarshalIndent(c, "", "  ")
 	return string(b)
 }
 
-func (c *StructConfig) Get(name string) string {
+func (c *Config) Get(name string) string {
 	v := reflect.ValueOf(c).Elem()
 	name = strings.ToLower(name)
 
@@ -59,7 +48,7 @@ func (c *StructConfig) Get(name string) string {
 	panic(fmt.Errorf("config element %s not defined", name))
 }
 
-func (c *StructConfig) Set(name, value string) {
+func (c *Config) Set(name, value string) {
 	v := reflect.ValueOf(c).Elem()
 	name = strings.ToLower(name)
 
@@ -74,7 +63,7 @@ func (c *StructConfig) Set(name, value string) {
 	panic(fmt.Errorf("config element %s not defined or not settable", name))
 }
 
-func (c *StructConfig) fillDefault() {
+func (c *Config) fillDefault() {
 	v := reflect.ValueOf(c).Elem()
 
 	for i := 0; i < v.NumField(); i++ {
@@ -84,8 +73,8 @@ func (c *StructConfig) fillDefault() {
 	}
 }
 
-func (c StructConfig) Names() []string {
-	v := reflect.ValueOf(c)
+func (c *Config) Names() []string {
+	v := reflect.ValueOf(c).Elem()
 	var names []string
 
 	for i := 0; i < v.NumField(); i++ {
@@ -95,12 +84,12 @@ func (c StructConfig) Names() []string {
 	return names
 }
 
-func (config *StructConfig) OverrideCLI(cli *CLI) {
+func (c *Config) OverrideCLI(cli *CLI) {
 	if cli.Output != "" {
-		config.Set("output", cli.Output)
+		c.Set("output", cli.Output)
 	}
 	if cli.TaskFormatQuery != "" {
-		config.Set("task_format_query", cli.TaskFormatQuery)
+		c.Set("task_format_query", cli.TaskFormatQuery)
 	}
 }
 
@@ -126,8 +115,8 @@ func setConfigDir() {
 	}
 }
 
-func newConfig() Config {
-	config := &StructConfig{}
+func newConfig() *Config {
+	config := &Config{}
 	config.fillDefault()
 	return config
 }
@@ -136,7 +125,7 @@ func configFilePath() string {
 	return filepath.Join(configDir, "config.json")
 }
 
-func loadConfig() (Config, error) {
+func loadConfig() (*Config, error) {
 	if config, err := loadConfigFile(); err == nil {
 		config.fillDefault()
 		return config, nil
@@ -144,35 +133,35 @@ func loadConfig() (Config, error) {
 	return newConfig(), nil
 }
 
-func loadConfigFile() (Config, error) {
+func loadConfigFile() (*Config, error) {
 	p := configFilePath()
 	jsonStr, err := os.ReadFile(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open config file: %w", err)
 	}
-	config := &StructConfig{}
+	config := &Config{}
 	if err := json.Unmarshal([]byte(jsonStr), config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal %s: %w", p, err)
 	}
 	return config, nil
 }
 
-func reConfigure(config Config) error {
+func reConfigure(c *Config) error {
 	log.Println("configuration file:", configFilePath())
-	conf := &StructConfig{}
+	nc := &Config{}
 
-	for _, elm := range config.ConfigElements() {
-		current := config.Get(elm.Name)
+	for _, elm := range c.ConfigElements() {
+		current := c.Get(elm.Name)
 		input := prompter.Prompt(
 			fmt.Sprintf("Enter %s (%s)", elm.Name, elm.Description),
 			current,
 		)
-		conf.Set(elm.Name, input)
+		nc.Set(elm.Name, input)
 	}
-	return saveConfig(conf)
+	return saveConfig(nc)
 }
 
-func saveConfig(config Config) error {
+func saveConfig(c *Config) error {
 	p := configFilePath()
 	if _, err := os.Stat(configDir); err != nil {
 		if os.IsNotExist(err) {
@@ -183,7 +172,7 @@ func saveConfig(config Config) error {
 			return fmt.Errorf("failed to stat config directory: %w", err)
 		}
 	}
-	b, err := json.MarshalIndent(config, "", "  ")
+	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
