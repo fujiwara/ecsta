@@ -14,7 +14,7 @@ import (
 )
 
 func (app *Ecsta) runFilter(ctx context.Context, src io.Reader, title string) (string, error) {
-	command := app.Config.Get("filter_command")
+	command := app.Config.FilterCommand
 	if command == "" {
 		return runInternalFilter(ctx, src, title)
 	}
