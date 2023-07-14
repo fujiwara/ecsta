@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
+	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 )
 
@@ -59,7 +62,10 @@ func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
 		return fmt.Errorf("failed to get endpoint: %w", err)
 	}
 
-	cmd := exec.Command(
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	cmd := exec.CommandContext(
+		ctx,
 		SessionManagerPluginBinary,
 		string(sess),
 		app.region,
@@ -69,9 +75,57 @@ func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
 		endpoint,
 	)
 	signal.Ignore(os.Interrupt)
-	defer signal.Reset(os.Interrupt)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
+	go func() {
+		if err := app.watchTaskUntilStopped(ctx, aws.ToString(task.TaskArn)); err != nil {
+			log.Println(err)
+			cancel()
+		}
+	}()
 	return cmd.Run()
+}
+
+func (app *Ecsta) watchTaskUntilStopped(ctx context.Context, taskID string) error {
+	ticker := time.NewTicker(10 * time.Second) // TODO: configurable
+	defer ticker.Stop()
+	var lastStatus string
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{
+			ids: []string{taskID},
+		})
+		if err != nil {
+			continue
+		}
+		if len(tasks) == 0 {
+			return fmt.Errorf("task not found: %s", taskID)
+		}
+		status := aws.ToString(tasks[0].LastStatus)
+		switch status {
+		case "STOPPED", "DELETED", "STOPPING", "DEPROVISIONING":
+			return fmt.Errorf(
+				"%s is %s: %s (%s)",
+				taskID,
+				status,
+				tasks[0].StopCode,
+				aws.ToString(tasks[0].StoppedReason),
+			)
+		case "DEACTIVATING":
+			if lastStatus != status {
+				log.Printf(
+					"%s is %s: %s",
+					taskID,
+					status,
+					tasks[0].StopCode,
+				)
+			}
+		}
+		lastStatus = status
+	}
 }
