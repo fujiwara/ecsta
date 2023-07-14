@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/Songmu/prompter"
 )
@@ -100,6 +101,7 @@ type ConfigElement struct {
 }
 
 var configDir string
+var configOnce sync.Once
 
 const configSubdir = "ecsta"
 

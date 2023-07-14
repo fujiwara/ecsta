@@ -35,6 +35,7 @@ type Ecsta struct {
 }
 
 func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
+	configOnce.Do(setConfigDir)
 	awscfg, err := awsConfig.LoadDefaultConfig(ctx, awsConfig.WithRegion(region))
 	if err != nil {
 		return nil, err
