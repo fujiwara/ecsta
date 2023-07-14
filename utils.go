@@ -1,7 +1,6 @@
 package ecsta
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,16 +28,7 @@ func arnToName(s string) string {
 	return ns[len(ns)-1]
 }
 
-type ssmRequestParameters struct {
-	Target string
-}
-
-func (p *ssmRequestParameters) String() string {
-	b, _ := json.Marshal(p)
-	return string(b)
-}
-
-func buildSsmRequestParameters(task types.Task, targetContainer string) (*ssmRequestParameters, error) {
+func ssmRequestTarget(task types.Task, targetContainer string) (string, error) {
 	values := strings.Split(*task.TaskArn, "/")
 	clusterName := values[1]
 	taskID := values[2]
@@ -48,7 +38,5 @@ func buildSsmRequestParameters(task types.Task, targetContainer string) (*ssmReq
 			runtimeID = *c.RuntimeId
 		}
 	}
-	return &ssmRequestParameters{
-		Target: fmt.Sprintf("ecs:%s_%s_%s", clusterName, taskID, runtimeID),
-	}, nil
+	return fmt.Sprintf("ecs:%s_%s_%s", clusterName, taskID, runtimeID), nil
 }
