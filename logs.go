@@ -2,6 +2,7 @@ package ecsta
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/Songmu/flextime"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
+	logsTypes "github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs/types"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/tkuchiki/parsetime"
@@ -133,8 +135,15 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	if !opt.Follow() {
 		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
 	}
+
 FOLLOW:
 	for {
+		if err := sleepWithContext(ctx, time.Second); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+			return err
+		}
 		if nextToken != nil {
 			in = &cloudwatchlogs.GetLogEventsInput{
 				LogGroupName:  &opt.logGroup,
@@ -145,8 +154,13 @@ FOLLOW:
 		}
 		res, err := app.logs.GetLogEvents(ctx, in)
 		if err != nil {
-			log.Println(err)
-			time.Sleep(time.Second)
+			var ne *logsTypes.ResourceNotFoundException
+			// log group or log stream not found, retry after 5 seconds
+			if errors.As(err, &ne) {
+				sleepWithContext(ctx, 5*time.Second)
+			} else {
+				log.Println(err)
+			}
 			continue
 		}
 		for _, e := range res.Events {
@@ -164,7 +178,6 @@ FOLLOW:
 			if !opt.Follow() {
 				break FOLLOW
 			}
-			time.Sleep(time.Second)
 			continue
 		}
 		nextToken = res.NextForwardToken
@@ -180,4 +193,13 @@ func timeToInt64msec(t time.Time) int64 {
 
 func msecToTime(i int64) time.Time {
 	return epoch.Add(time.Duration(i) * time.Millisecond)
+}
+
+func sleepWithContext(ctx context.Context, d time.Duration) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(d):
+		return nil
+	}
 }
