@@ -61,6 +61,7 @@ func New(ctx context.Context, region, cluster string) (*Ecsta, error) {
 type optionListTasks struct {
 	family  *string
 	service *string
+	tags    map[string]string
 }
 
 type optionDescribeTasks struct {
@@ -119,6 +120,24 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 			}
 		}
 	}
+
+	// filter by tags
+	if len(opt.tags) > 0 {
+		tasks = lo.Filter(tasks, func(task types.Task, i int) bool {
+			matched := 0
+			for k, v := range opt.tags {
+				if tags := task.Tags; tags != nil {
+					for _, tag := range tags {
+						if aws.ToString(tag.Key) == k && aws.ToString(tag.Value) == v {
+							matched++
+						}
+					}
+				}
+			}
+			return matched == len(opt.tags) // AND condition
+		})
+	}
+
 	return lo.UniqBy(tasks, func(task types.Task) string {
 		return aws.ToString(task.TaskArn)
 	}), nil
