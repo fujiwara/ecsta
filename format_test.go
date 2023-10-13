@@ -136,10 +136,25 @@ var formatTestSuite = []struct {
 	},
 	{
 		opt: ecsta.FormatterOption{
+			Format:   "tsv",
+			WithTags: true,
+		},
+		wantFile: "testdata/tasks_withtags.tsv",
+	},
+	{
+		opt: ecsta.FormatterOption{
 			Format:    "table",
 			HasHeader: true,
 		},
 		wantFile: "testdata/tasks.table",
+	},
+	{
+		opt: ecsta.FormatterOption{
+			Format:    "table",
+			HasHeader: true,
+			WithTags:  true,
+		},
+		wantFile: "testdata/tasks_withtags.table",
 	},
 	{
 		opt: ecsta.FormatterOption{

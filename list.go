@@ -6,8 +6,10 @@ import (
 )
 
 type ListOption struct {
-	Family  *string `help:"Task definition family" short:"f"`
-	Service *string `help:"Service name" short:"s"`
+	Family     *string           `help:"Task definition family" short:"f"`
+	Service    *string           `help:"Service name" short:"s"`
+	OutputTags bool              `help:"Output tags of tasks"`
+	Tags       map[string]string `help:"Show only tasks that have specified tags" mapsep:","`
 }
 
 func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
@@ -17,6 +19,7 @@ func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
 	tasks, err := app.listTasks(ctx, &optionListTasks{
 		family:  opt.Family,
 		service: opt.Service,
+		tags:    opt.Tags,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list tasks in cluster %s: %w", app.cluster, err)
@@ -24,6 +27,7 @@ func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {
 	fopt := formatterOption{
 		Format:    app.Config.Output,
 		HasHeader: true,
+		WithTags:  opt.OutputTags,
 	}
 	if query := app.Config.TaskFormatQuery; query != "" {
 		fopt.Format = "json"

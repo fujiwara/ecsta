@@ -1,0 +1,2 @@
+045a0639-1dc5-4d17-8101-2dd3fd339e91	taskdef-name:123	2ee1c131-7f61-43ab-884a-379e668d31fb	PENDING	RUNNING	2022-01-01T09:00:00+09:00	family:taskdef-name	EC2	Name=task-name,Env=prod
+8f431e68-a57d-41db-ae8d-5eb700a134dc	taskdef-name:999	70d14568-f853-4c03-92a5-86ef9b3c0077	PENDING	RUNNING	2023-01-01T09:00:00+09:00	service:service-name	FARGATE	Name=task-name,Env=dev

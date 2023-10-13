@@ -13,11 +13,47 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+var taskFormatterColumns = []string{
+	"ID",
+	"TaskDefinition",
+	"Instance",
+	"LastStatus",
+	"DesiredStatus",
+	"CreatedAt",
+	"Group",
+	"Type",
+}
+
 type formatterOption struct {
 	Format       string
 	HasHeader    bool
 	AppendTaskID bool
 	Query        string
+	WithTags     bool
+}
+
+func (o *formatterOption) Columns() []string {
+	if o.WithTags {
+		return append(taskFormatterColumns, "Tags")
+	}
+	return taskFormatterColumns
+}
+
+func (o *formatterOption) taskToColumns(task types.Task) []string {
+	ss := []string{
+		arnToName(*task.TaskArn),
+		arnToName(*task.TaskDefinitionArn),
+		arnToName(aws.ToString(task.ContainerInstanceArn)),
+		aws.ToString(task.LastStatus),
+		aws.ToString(task.DesiredStatus),
+		task.CreatedAt.In(time.Local).Format(time.RFC3339),
+		aws.ToString(task.Group),
+		string(task.LaunchType),
+	}
+	if o.WithTags {
+		ss = append(ss, formatTags(task.Tags))
+	}
+	return ss
 }
 
 type taskFormatterFunc func(io.Writer, formatterOption) (taskFormatter, error)
@@ -40,47 +76,33 @@ type taskFormatter interface {
 	Close()
 }
 
-var taskFormatterColumns = []string{
-	"ID",
-	"TaskDefinition",
-	"Instance",
-	"LastStatus",
-	"DesiredStatus",
-	"CreatedAt",
-	"Group",
-	"Type",
-}
-
-func taskToColumns(task types.Task) []string {
-	return []string{
-		arnToName(*task.TaskArn),
-		arnToName(*task.TaskDefinitionArn),
-		arnToName(aws.ToString(task.ContainerInstanceArn)),
-		aws.ToString(task.LastStatus),
-		aws.ToString(task.DesiredStatus),
-		task.CreatedAt.In(time.Local).Format(time.RFC3339),
-		aws.ToString(task.Group),
-		string(task.LaunchType),
+func formatTags(tags []types.Tag) string {
+	var ts []string
+	for _, tag := range tags {
+		ts = append(ts, fmt.Sprintf("%s=%s", *tag.Key, *tag.Value))
 	}
+	return strings.Join(ts, ",")
 }
 
 type taskFormatterTable struct {
 	table *tablewriter.Table
+	opt   *formatterOption
 }
 
 func newTaskFormatterTable(w io.Writer, opt formatterOption) (taskFormatter, error) {
 	t := &taskFormatterTable{
 		table: tablewriter.NewWriter(w),
+		opt:   &opt,
 	}
 	if opt.HasHeader {
-		t.table.SetHeader(taskFormatterColumns)
+		t.table.SetHeader(opt.Columns())
 	}
 	t.table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	return t, nil
 }
 
 func (t *taskFormatterTable) AddTask(task types.Task) {
-	t.table.Append(taskToColumns(task))
+	t.table.Append(t.opt.taskToColumns(task))
 }
 
 func (t *taskFormatterTable) Close() {
@@ -88,11 +110,15 @@ func (t *taskFormatterTable) Close() {
 }
 
 type taskFormatterTSV struct {
-	w io.Writer
+	w   io.Writer
+	opt *formatterOption
 }
 
 func newTaskFormatterTSV(w io.Writer, opt formatterOption) (taskFormatter, error) {
-	t := &taskFormatterTSV{w: w}
+	t := &taskFormatterTSV{
+		w:   w,
+		opt: &opt,
+	}
 	if opt.HasHeader {
 		fmt.Fprintln(t.w, strings.Join(taskFormatterColumns, "\t"))
 	}
@@ -100,7 +126,7 @@ func newTaskFormatterTSV(w io.Writer, opt formatterOption) (taskFormatter, error
 }
 
 func (t *taskFormatterTSV) AddTask(task types.Task) {
-	fmt.Fprintln(t.w, strings.Join(taskToColumns(task), "\t"))
+	fmt.Fprintln(t.w, strings.Join(t.opt.taskToColumns(task), "\t"))
 }
 
 func (t *taskFormatterTSV) Close() {
