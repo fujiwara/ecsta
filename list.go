@@ -8,8 +8,8 @@ import (
 type ListOption struct {
 	Family     *string           `help:"Task definition family" short:"f"`
 	Service    *string           `help:"Service name" short:"s"`
-	OutputTags bool              `help:"Output tags"`
-	Tags       map[string]string `help:"Tags" mapsep:","`
+	OutputTags bool              `help:"Output tags of tasks"`
+	Tags       map[string]string `help:"Show only tasks that have specified tags" mapsep:","`
 }
 
 func (app *Ecsta) RunList(ctx context.Context, opt *ListOption) error {

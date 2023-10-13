@@ -84,8 +84,10 @@ Usage: ecsta list
 List tasks
 
 Flags:
-  -f, --family=STRING     Task definition family
-  -s, --service=STRING    Service name
+  -f, --family=FAMILY               Task definition family
+  -s, --service=SERVICE             Service name
+      --output-tags                 Output tags of tasks
+      --tags=KEY=VALUE,...          Show only tasks that have specified tags
 ```
 
 ```console
@@ -94,6 +96,14 @@ $ ecsta list --cluster foo
 +----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+
 | 38b0db90fd4c4b5aaff29288b2179b5a | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-05T09:59:27+09:00 | service:nginx-local | FARGATE |
 | 4deeb701c49a4892b7de39a2d0df17e0 | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-06T00:12:50+09:00 | service:nginx-local | FARGATE |
+```
+
+```console
+$ ecsta list --cluster foo --output-tags --tags Env=prod
+|                ID                |   TASKDEFINITION   | INSTANCE | LASTSTATUS | DESIREDSTATUS |         CREATEDAT         |        GROUP        |  TYPE   |         TAGS            |
++----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+
+| 38b0db90fd4c4b5aaff29288b2179b5a | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-05T09:59:27+09:00 | service:nginx-local | FARGATE | Env=prod,Name=nginx-local |
+| 4deeb701c49a4892b7de39a2d0df17e0 | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-06T00:12:50+09:00 | service:nginx-local | FARGATE | Env=prod,Name=nginx-local |
 ```
 
 ### Describe task
