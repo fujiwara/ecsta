@@ -100,8 +100,8 @@ $ ecsta list --cluster foo
 
 ```console
 $ ecsta list --cluster foo --output-tags --tags Env=prod
-|                ID                |   TASKDEFINITION   | INSTANCE | LASTSTATUS | DESIREDSTATUS |         CREATEDAT         |        GROUP        |  TYPE   |         TAGS            |
-+----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+
+|                ID                |   TASKDEFINITION   | INSTANCE | LASTSTATUS | DESIREDSTATUS |         CREATEDAT         |        GROUP        |  TYPE   |           TAGS            |
++----------------------------------+--------------------+----------+------------+---------------+---------------------------+---------------------+---------+---------------------------+
 | 38b0db90fd4c4b5aaff29288b2179b5a | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-05T09:59:27+09:00 | service:nginx-local | FARGATE | Env=prod,Name=nginx-local |
 | 4deeb701c49a4892b7de39a2d0df17e0 | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-06T00:12:50+09:00 | service:nginx-local | FARGATE | Env=prod,Name=nginx-local |
 ```
