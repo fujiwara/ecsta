@@ -202,10 +202,16 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 	if opt.id != "" {
 		tasks, err := app.describeTasks(ctx, &optionDescribeTasks{ids: []string{opt.id}})
 		if err != nil {
-			return types.Task{}, err
+			return types.Task{}, fmt.Errorf("no tasks found: %w", err)
 		}
-		if len(tasks) == 1 {
+		switch len(tasks) {
+		case 0:
+			return types.Task{}, fmt.Errorf("task not found: %s", opt.id)
+		case 1:
 			return tasks[0], nil
+		default:
+			// should not reach here
+			return types.Task{}, fmt.Errorf("multiple tasks found: %s", opt.id)
 		}
 	}
 	tasks, err := app.listTasks(ctx, &optionListTasks{
@@ -219,6 +225,13 @@ func (app *Ecsta) findTask(ctx context.Context, opt *optionFindTask) (types.Task
 		tasks = lo.Filter(tasks, func(task types.Task, _ int) bool {
 			return opt.selectFunc(task)
 		})
+	}
+
+	switch len(tasks) {
+	case 0:
+		return types.Task{}, fmt.Errorf("no tasks found")
+	case 1:
+		return tasks[0], nil
 	}
 
 	buf := new(bytes.Buffer)
