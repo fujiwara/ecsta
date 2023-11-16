@@ -11,9 +11,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.15.14
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.20.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.27.9
+	github.com/creack/pty v1.1.20
 	github.com/fujiwara/tracer v1.0.2
 	github.com/google/go-cmp v0.5.9
 	github.com/itchyny/gojq v0.12.11
+	github.com/mattn/go-isatty v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.36.0
 	github.com/tkuchiki/parsetime v0.3.0
@@ -31,10 +33,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.5 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
-	github.com/creack/pty v1.1.20 // indirect
 	github.com/itchyny/timefmt-go v0.1.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
