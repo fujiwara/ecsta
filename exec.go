@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -13,6 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
+	"github.com/creack/pty"
+	"github.com/mattn/go-isatty"
 )
 
 const SessionManagerPluginBinary = "session-manager-plugin"
@@ -90,16 +93,29 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 		string(ssmreq),
 		endpoint,
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
 	go func() {
 		if err := app.watchTaskUntilStopping(ctx, *task.TaskArn); err != nil {
 			log.Println(err)
 			cancel()
 		}
 	}()
-	return cmd.Run()
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	} else {
+		log.Println("running in non-interactive mode (tty is not available)")
+		ptmx, err := pty.Start(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to start pty: %w", err)
+		}
+		defer ptmx.Close()
+		go func() {
+			io.Copy(os.Stdout, ptmx)
+		}()
+		return cmd.Wait()
+	}
 }
 
 func (app *Ecsta) watchTaskUntilStopping(ctx context.Context, taskID string) error {
