@@ -29,10 +29,20 @@ func arnToName(s string) string {
 }
 
 func ssmRequestTarget(task types.Task, targetContainer string) (string, error) {
-	values := strings.Split(*task.TaskArn, "/")
-	clusterName := values[1]
-	taskID := values[2]
-	var runtimeID string
+	values := strings.Split(arnToResource(*task.TaskArn), "/")
+	var taskID, clusterName, runtimeID string
+	switch len(values) {
+	case 3:
+		// long arn
+		clusterName = values[1]
+		taskID = values[2]
+	case 2:
+		// short arn does not contain cluster name
+		clusterName = arnToResource(*task.ClusterArn)
+		taskID = values[1]
+	default:
+		return "", fmt.Errorf("unexpected task arn: %s", *task.TaskArn)
+	}
 	for _, c := range task.Containers {
 		if *c.Name == targetContainer {
 			runtimeID = *c.RuntimeId
