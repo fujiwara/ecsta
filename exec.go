@@ -26,6 +26,8 @@ type ExecOption struct {
 	Container string  `help:"container name"`
 	Family    *string `help:"task definiton family name"`
 	Service   *string `help:"ECS service name"`
+
+	ignoreSignal bool
 }
 
 func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
@@ -61,7 +63,9 @@ func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
 		return fmt.Errorf("failed to build ssm request parameters: %w", err)
 	}
 
-	signal.Ignore(os.Interrupt)
+	if opt.ignoreSignal {
+		signal.Ignore(os.Interrupt)
+	}
 	return app.runSessionManagerPlugin(ctx, task, out.Session, target)
 }
 
@@ -93,6 +97,14 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 		string(ssmreq),
 		endpoint,
 	)
+	// send SIGINT to session manager plugin the context is canceled.
+	cmd.Cancel = func() error {
+		log.Println("[info] sending SIGINT to", SessionManagerPluginBinary)
+		return cmd.Process.Signal(os.Interrupt)
+	}
+	// send SIGKILL after 3 seconds if SIGINT is ignored.
+	cmd.WaitDelay = 3 * time.Second
+
 	go func() {
 		if err := app.watchTaskUntilStopping(ctx, *task.TaskArn); err != nil {
 			log.Println(err)

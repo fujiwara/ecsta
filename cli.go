@@ -53,6 +53,7 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 	case "describe":
 		return app.RunDescribe(ctx, cli.Describe)
 	case "exec":
+		cli.Exec.ignoreSignal = true // ignore signal in exec command
 		return app.RunExec(ctx, cli.Exec)
 	case "list":
 		return app.RunList(ctx, cli.List)

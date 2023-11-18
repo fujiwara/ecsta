@@ -10,12 +10,12 @@ type AgentOption struct {
 }
 
 func (app *Ecsta) RunAgent(ctx context.Context, opt *AgentOption) error {
-	o := &grpcp.ServerOption{
+	sopt := &grpcp.ServerOption{
 		Listen: "127.0.0.1",
 		Port:   8022,
 	}
 	go func() {
-		err := grpcp.RunServer(context.TODO(), o)
+		err := grpcp.RunServer(ctx, sopt)
 		if err != nil {
 			panic(err)
 		}

@@ -38,22 +38,25 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 		return fmt.Errorf("failed to select containers: %w", err)
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
 		err := app.RunExec(ctx, &ExecOption{
 			ID:        *task.TaskArn,
 			Container: container,
 			Command:   "ecsta agent",
+			ignoreSignal: false,
 		})
 		if err != nil {
 			log.Println(err)
 		}
-	}()
+	}(ctx)
 
 	wg.Add(1)
-	go func() {
+	go func(ctx context.Context) {
 		defer wg.Done()
 		err := app.RunPortforward(ctx, &PortforwardOption{
 			ID:         *task.TaskArn,
@@ -64,23 +67,34 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 		if err != nil {
 			log.Println(err)
 		}
+	}(ctx)
+
+	defer func() { // teardown
+		cancel()
+		log.Println("[info] waiting for agent stop...")
+		time.Sleep(3 * time.Second)
+		wg.Wait()
 	}()
 
-	c := grpcp.NewClient(&grpcp.ClientOption{
-		Port: 8022, // local port
+	localhost := "127.0.0.1"
+	client := grpcp.NewClient(&grpcp.ClientOption{
+		Host: localhost,
+		Port: 8022,
 	})
+	ticker := time.NewTicker(1 * time.Second)
 	for i := 0; i < 10; i++ {
-		if _, err := c.Ping(ctx, "127.0.0.1"); err == nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+		if _, err := client.Ping(ctx); err == nil {
 			break
 		}
-		time.Sleep(1 * time.Second)
-		log.Println("waiting for agent...")
+		log.Println("[info] waiting for remote agent...")
 	}
+
 	src := strings.Replace(opt.Src, "_:", "127.0.0.1:", 1)
 	dest := strings.Replace(opt.Dest, "_:", "127.0.0.1:", 1)
-	if err := c.Copy(ctx, src, dest); err != nil {
-		return err
-	}
-	//	wg.Wait()
-	return nil
+	return client.Copy(ctx, src, dest)
 }
