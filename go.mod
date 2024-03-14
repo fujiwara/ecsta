@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.31.0
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.37.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.44.7
-	github.com/creack/pty v1.1.20
+	github.com/creack/pty v1.1.21
 	github.com/fujiwara/tracer v1.0.2
 	github.com/google/go-cmp v0.5.9
 	github.com/itchyny/gojq v0.12.11
