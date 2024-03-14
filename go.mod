@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/Songmu/flextime v0.1.0
 	github.com/Songmu/prompter v0.5.1
-	github.com/alecthomas/kong v0.7.0
+	github.com/alecthomas/kong v0.9.0
 	github.com/aws/aws-sdk-go-v2 v1.24.1
 	github.com/aws/aws-sdk-go-v2/config v1.26.3
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.31.0
