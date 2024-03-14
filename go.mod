@@ -17,7 +17,7 @@ require (
 	github.com/itchyny/gojq v0.12.11
 	github.com/mattn/go-isatty v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/samber/lo v1.36.0
+	github.com/samber/lo v1.39.0
 	github.com/tkuchiki/parsetime v0.3.0
 )
 
