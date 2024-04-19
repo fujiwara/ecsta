@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
@@ -13,14 +14,44 @@ import (
 type PortforwardOption struct {
 	ID         string  `help:"task ID"`
 	Container  string  `help:"container name"`
-	LocalPort  int     `help:"local port" required:"true"`
-	RemotePort int     `help:"remote port" required:"true"`
+	LocalPort  int     `help:"local port"`
+	RemotePort int     `help:"remote port"`
 	RemoteHost string  `help:"remote host"`
-	Family     *string `help:"task definiton family name"`
+	L          string  `name:"L" help:"short expression of local-port:remote-host:remote-port" short:"L"`
+	Family     *string `help:"task definition family name"`
 	Service    *string `help:"ECS service name"`
 }
 
+func (opt *PortforwardOption) ParseL() error {
+	if opt.L == "" {
+		return nil
+	}
+	parts := strings.SplitN(opt.L, ":", 3)
+	if len(parts) != 3 {
+		return fmt.Errorf("invalid format: %s", opt.L)
+	}
+	localPort, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return fmt.Errorf("invalid local port: %s", parts[0])
+	}
+	remotePort, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return fmt.Errorf("invalid remote port: %s", parts[2])
+	}
+	opt.LocalPort = localPort
+	opt.RemoteHost = parts[1]
+	opt.RemotePort = remotePort
+	return nil
+}
+
 func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) error {
+	if err := opt.ParseL(); err != nil {
+		return err
+	}
+	if opt.LocalPort == 0 || opt.RemotePort == 0 {
+		return fmt.Errorf("local-port and remote-port must be specified")
+	}
+
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
