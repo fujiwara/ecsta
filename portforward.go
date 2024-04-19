@@ -30,15 +30,19 @@ func (opt *PortforwardOption) ParseL() error {
 	if len(parts) != 3 {
 		return fmt.Errorf("invalid format: %s", opt.L)
 	}
-	localPort, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return fmt.Errorf("invalid local port: %s", parts[0])
+	if parts[0] != "" {
+		localPort, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return fmt.Errorf("invalid local port: %s", parts[0])
+		}
+		opt.LocalPort = localPort
+	} else {
+		opt.LocalPort = 0 // use ephemeral port
 	}
 	remotePort, err := strconv.Atoi(parts[2])
 	if err != nil {
 		return fmt.Errorf("invalid remote port: %s", parts[2])
 	}
-	opt.LocalPort = localPort
 	opt.RemoteHost = parts[1]
 	opt.RemotePort = remotePort
 	return nil
@@ -48,8 +52,8 @@ func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) er
 	if err := opt.ParseL(); err != nil {
 		return err
 	}
-	if opt.LocalPort == 0 || opt.RemotePort == 0 {
-		return fmt.Errorf("local-port and remote-port must be specified")
+	if opt.RemotePort == 0 {
+		return fmt.Errorf("remote-port must be specified")
 	}
 
 	if err := app.SetCluster(ctx); err != nil {
