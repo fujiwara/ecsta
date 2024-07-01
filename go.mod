@@ -14,8 +14,8 @@ require (
 	github.com/creack/pty v1.1.20
 	github.com/fujiwara/tracer v1.0.2
 	github.com/google/go-cmp v0.5.9
-	github.com/itchyny/gojq v0.12.11
-	github.com/mattn/go-isatty v0.0.16
+	github.com/itchyny/gojq v0.12.16
+	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/samber/lo v1.36.0
 	github.com/tkuchiki/parsetime v0.3.0
@@ -35,13 +35,13 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7 // indirect
 	github.com/aws/smithy-go v1.19.0 // indirect
-	github.com/itchyny/timefmt-go v0.1.5 // indirect
+	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/rivo/uniseg v0.3.4 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
