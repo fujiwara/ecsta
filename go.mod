@@ -17,7 +17,7 @@ require (
 	github.com/itchyny/gojq v0.12.11
 	github.com/mattn/go-isatty v0.0.16
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/samber/lo v1.36.0
+	github.com/samber/lo v1.44.0
 	github.com/tkuchiki/parsetime v0.3.0
 )
 
@@ -40,8 +40,8 @@ require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
