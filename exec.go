@@ -95,7 +95,7 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 	)
 	go func() {
 		if err := app.watchTaskUntilStopping(ctx, *task.TaskArn); err != nil {
-			slog.Warn("failed to watch task until stopping", "error", err)
+			slog.Info(err.Error())
 			cancel()
 		}
 	}()
@@ -149,8 +149,8 @@ func (app *Ecsta) watchTaskUntilStopping(ctx context.Context, taskID string) err
 			)
 		case "DEACTIVATING":
 			if lastStatus != status {
-				slog.Info(
-					"awaiting for task to be stopped",
+				slog.Warn(
+					"the task will be stopped",
 					"task_id", taskID,
 					"status", status,
 					"stop_code", tasks[0].StopCode,
