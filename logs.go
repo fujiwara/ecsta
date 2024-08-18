@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"sync"
 	"time"
@@ -100,7 +100,7 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 				follow:        opt.Follow,
 				containerName: name,
 			}); err != nil {
-				log.Println(err)
+				slog.Error("failed to follow logs", "error", err)
 			}
 		}()
 	}
@@ -159,7 +159,7 @@ FOLLOW:
 			if errors.As(err, &ne) {
 				sleepWithContext(ctx, 5*time.Second)
 			} else {
-				log.Println(err)
+				slog.Warn("failed to get log events", "error", err)
 			}
 			continue
 		}

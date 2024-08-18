@@ -3,7 +3,7 @@ package ecsta
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -149,7 +149,7 @@ func loadConfigFile() (*Config, error) {
 }
 
 func reConfigure(c *Config) error {
-	log.Println("configuration file:", configFilePath())
+	slog.Info("configuration file", "path", configFilePath())
 	nc := &Config{}
 
 	for _, elm := range c.ConfigElements() {
@@ -186,6 +186,6 @@ func saveConfig(c *Config) error {
 	if err := os.WriteFile(p, b, 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
-	log.Println("Saved configuration file:", configFilePath())
+	slog.Info("saved configuration file", "path", configFilePath())
 	return nil
 }

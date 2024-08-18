@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 
@@ -16,12 +16,13 @@ func init() {
 }
 
 func main() {
-	ctx := context.TODO()
+	ctx := context.Background()
 	ctx, stop := signal.NotifyContext(ctx, []os.Signal{os.Interrupt}...)
 	defer stop()
 
 	err := ecsta.RunCLI(ctx, os.Args[1:])
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to run", "error", err)
+		os.Exit(1)
 	}
 }

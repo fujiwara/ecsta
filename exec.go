@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -95,7 +95,7 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 	)
 	go func() {
 		if err := app.watchTaskUntilStopping(ctx, *task.TaskArn); err != nil {
-			log.Println(err)
+			slog.Info(err.Error())
 			cancel()
 		}
 	}()
@@ -105,7 +105,7 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 		cmd.Stderr = os.Stderr
 		return cmd.Run()
 	} else {
-		log.Println("running in non-interactive mode (tty is not available)")
+		slog.Info("running in non-interactive mode (tty is not available)")
 		ptmx, err := pty.Start(cmd)
 		if err != nil {
 			return fmt.Errorf("failed to start pty: %w", err)
@@ -149,11 +149,11 @@ func (app *Ecsta) watchTaskUntilStopping(ctx context.Context, taskID string) err
 			)
 		case "DEACTIVATING":
 			if lastStatus != status {
-				log.Printf(
-					"%s is %s: %s",
-					taskID,
-					status,
-					tasks[0].StopCode,
+				slog.Warn(
+					"the task will be stopped",
+					"task_id", taskID,
+					"status", status,
+					"stop_code", tasks[0].StopCode,
 				)
 			}
 		}

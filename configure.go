@@ -3,7 +3,7 @@ package ecsta
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 type ConfigureOption struct {
@@ -12,7 +12,7 @@ type ConfigureOption struct {
 
 func (app *Ecsta) RunConfigure(ctx context.Context, cmd *ConfigureOption) error {
 	if cmd.Show {
-		log.Println("configuration file:", configFilePath())
+		slog.Info("configuration file", "path", configFilePath())
 		fmt.Fprintln(app.w, app.Config.String())
 		return nil
 	}
