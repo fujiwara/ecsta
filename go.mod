@@ -1,6 +1,8 @@
 module github.com/fujiwara/ecsta
 
-go 1.18
+go 1.22
+
+toolchain go1.23.0
 
 require (
 	github.com/Songmu/flextime v0.1.0
@@ -12,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.44.1
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.52.1
 	github.com/creack/pty v1.1.20
-	github.com/fujiwara/tracer v1.0.2
+	github.com/fujiwara/tracer v1.1.0
 	github.com/google/go-cmp v0.5.9
 	github.com/itchyny/gojq v0.12.11
 	github.com/mattn/go-isatty v0.0.16

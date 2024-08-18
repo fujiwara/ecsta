@@ -195,8 +195,9 @@ Flags:
       --id=STRING                   task ID
   -d, --duration=1m                 duration to trace
       --sns-topic-arn=STRING        SNS topic ARN
-      --family=FAMILY               task definiton family name
+      --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
+      --json                        output JSON linesUsage: ecsta trace
 ```
 
 ### Logs
@@ -212,7 +213,7 @@ Flags:
   -d, --duration=1m                 log timestamps duration
   -f, --follow                      follow logs
       --container=STRING            container name
-      --family=FAMILY               task definiton family name
+      --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
 ```
 
