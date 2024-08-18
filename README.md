@@ -136,21 +136,36 @@ Flags:
 
 ### Portforward task
 
-`-local-port` and `-remote-port` are required.
+`-local-port` and `-remote-port`, or `-L` is required.
 
 ```
-Usage: ecsta portforward --local-port=INT --remote-port=INT
+Usage: ecsta portforward
 
 Forward a port of a task
 
 Flags:
-      --id=STRING             task ID
-      --container=STRING      container name
-      --local-port=INT        local port
-      --remote-port=INT       remote port
-      --remote-host=STRING    remote host
-      --family=FAMILY         task definition family name
-      --service=SERVICE       ECS service name
+      --id=STRING                   task ID
+      --container=STRING            container name
+      --local-port=INT              local port
+      --remote-port=INT             remote port
+      --remote-host=STRING          remote host
+  -L, --L=STRING                    short expression of local-port:remote-host:remote-port
+      --family=FAMILY               task definition family name
+      --service=SERVICE             ECS service name
+```
+
+An example of port forwarding. Forward a port 8080 of a task to 80 of example.com.
+
+```console
+$ ecsta portforward --local-port 8080 --remote-port 80 --remote-host example.com
+
+$ ecsta portforward -L 8080:example.com:80
+```
+
+ecsta connects to the task and starts a port forwarding. You can access the port 8080 of the local machine.
+
+```console
+$ curl -H"Host: example.com" http://localhost:8080
 ```
 
 ### Stop task
@@ -180,8 +195,9 @@ Flags:
       --id=STRING                   task ID
   -d, --duration=1m                 duration to trace
       --sns-topic-arn=STRING        SNS topic ARN
-      --family=FAMILY               task definiton family name
+      --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
+      --json                        output JSON linesUsage: ecsta trace
 ```
 
 ### Logs
@@ -197,7 +213,7 @@ Flags:
   -d, --duration=1m                 log timestamps duration
   -f, --follow                      follow logs
       --container=STRING            container name
-      --family=FAMILY               task definiton family name
+      --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
 ```
 

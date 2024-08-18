@@ -185,8 +185,8 @@ func TestFormatTasks(t *testing.T) {
 				f.Close()
 			}
 			b, _ := os.ReadFile(ts.wantFile)
-			if got := buf.String(); got != string(b) {
-				t.Errorf("got %q, want %q", got, string(b))
+			if diff := cmp.Diff(buf.String(), string(b)); diff != "" {
+				t.Error(diff)
 			}
 		})
 	}
