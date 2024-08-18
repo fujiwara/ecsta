@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 
@@ -22,6 +22,6 @@ func main() {
 
 	err := ecsta.RunCLI(ctx, os.Args[1:])
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to run", "error", err)
 	}
 }
