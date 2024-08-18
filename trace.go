@@ -12,8 +12,9 @@ type TraceOption struct {
 	ID          string        `help:"task ID"`
 	Duration    time.Duration `help:"duration to trace" short:"d" default:"1m"`
 	SNSTopicArn string        `help:"SNS topic ARN"`
-	Family      *string       `help:"task definiton family name"`
+	Family      *string       `help:"task definition family name"`
 	Service     *string       `help:"ECS service name"`
+	JSON        bool          `help:"output JSON lines"`
 }
 
 func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
@@ -33,6 +34,7 @@ func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
 		Stdout:      true,
 		Duration:    opt.Duration,
 		SNSTopicArn: opt.SNSTopicArn,
+		JSON:        opt.JSON,
 	}
 	tr.SetOutput(app.w)
 	return tr.Run(ctx, app.cluster, *task.TaskArn, tracerOpt)
