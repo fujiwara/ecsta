@@ -24,7 +24,7 @@ type LogsOption struct {
 	Duration  time.Duration `help:"log timestamps duration" short:"d" default:"1m"`
 	Follow    bool          `help:"follow logs" short:"f"`
 	Container string        `help:"container name"`
-	Family    *string       `help:"task definiton family name"`
+	Family    *string       `help:"task definition family name"`
 	Service   *string       `help:"ECS service name"`
 }
 

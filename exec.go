@@ -24,7 +24,7 @@ type ExecOption struct {
 	ID        string  `help:"task ID"`
 	Command   string  `help:"command to execute" default:"sh"`
 	Container string  `help:"container name"`
-	Family    *string `help:"task definiton family name"`
+	Family    *string `help:"task definition family name"`
 	Service   *string `help:"ECS service name"`
 }
 
