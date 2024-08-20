@@ -136,7 +136,7 @@ Flags:
 
 ### Portforward task
 
-`-local-port` and `-remote-port`, or `-L` is required.
+`--local-port` and `--remote-port`, or `-L` is required.
 
 ```
 Usage: ecsta portforward
@@ -197,7 +197,7 @@ Flags:
       --sns-topic-arn=STRING        SNS topic ARN
       --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
-  -j, --json                        output JSON linesUsage: ecsta trace
+  -j, --json                        output JSON lines
 ```
 
 ### Logs

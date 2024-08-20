@@ -91,6 +91,9 @@ func newLogEncoder(w io.Writer, jsonFormat bool) logEncoder {
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
+	if app.Config.Output == "json" {
+		opt.JSON = true
+	}
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}

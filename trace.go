@@ -30,6 +30,10 @@ func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
 	if err != nil {
 		return fmt.Errorf("failed to create tracer: %w", err)
 	}
+
+	if app.Config.Output == "json" {
+		opt.JSON = true
+	}
 	tracerOpt := &tracer.RunOption{
 		Stdout:      true,
 		Duration:    opt.Duration,
