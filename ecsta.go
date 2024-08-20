@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -80,20 +81,31 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 	return out.Tasks, nil
 }
 
-func ecsNewListTasksIterator(ctx context.Context, c *ecs.Client, in *ecs.ListTasksInput) func(func(*ecs.ListTasksOutput, error) bool) {
-	return func(yield func(*ecs.ListTasksOutput, error) bool) {
+func newAnyIterator[IN any, OUT any, OPT any](ctx context.Context, do func(context.Context, *IN, ...OPT) (*OUT, error), next func(*IN, *OUT) bool, in *IN, opt ...OPT) func(func(*OUT, error) bool) {
+	return func(yield func(*OUT, error) bool) {
 		for {
-			out, err := c.ListTasks(ctx, in)
+			slog.Info("do", "in", in)
+			out, err := do(ctx, in, opt...)
 			if err != nil {
 				yield(nil, err)
 				return
 			}
-			if !yield(out, err) || out.NextToken == nil {
+			if !yield(out, err) {
 				return
 			}
-			in.NextToken = out.NextToken
+			if !next(in, out) { // if next returns true, has a next page. continue
+				return
+			}
 		}
 	}
+}
+
+func ecsListTasksNext(in *ecs.ListTasksInput, out *ecs.ListTasksOutput) bool {
+	if out.NextToken == nil {
+		return false
+	}
+	in.NextToken = out.NextToken
+	return true
 }
 
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
@@ -115,7 +127,7 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 		for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
 			input := input
 			input.DesiredStatus = status
-			for res, err := range ecsNewListTasksIterator(ctx, app.ecs, input) {
+			for res, err := range newAnyIterator(ctx, app.ecs.ListTasks, ecsListTasksNext, input) {
 				if err != nil {
 					return nil, err
 				}
