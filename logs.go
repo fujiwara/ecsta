@@ -2,9 +2,12 @@ package ecsta
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +29,7 @@ type LogsOption struct {
 	Container string        `help:"container name"`
 	Family    *string       `help:"task definition family name"`
 	Service   *string       `help:"ECS service name"`
+	JSON      bool          `help:"output as JSON lines" short:"j"`
 }
 
 func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
@@ -50,6 +54,40 @@ func (opt *LogsOption) ResolveTimestamps() (time.Time, time.Time, error) {
 		endTime = time.Time{}
 	}
 	return startTime, endTime, nil
+}
+
+type logRecord struct {
+	Time      string `json:"time"`
+	Container string `json:"container"`
+	Msg       string `json:"msg"`
+}
+
+type logEncoder interface {
+	Encode(v *logRecord) error
+}
+
+type logTextEncoder struct {
+	w io.Writer
+}
+
+func (e *logTextEncoder) Encode(v *logRecord) error {
+	_, err := fmt.Fprintln(e.w, strings.Join([]string{v.Time, v.Container, v.Msg}, "\t"))
+	return err
+}
+
+type logJSONEncoder struct {
+	enc *json.Encoder
+}
+
+func (e *logJSONEncoder) Encode(v *logRecord) error {
+	return e.enc.Encode(v)
+}
+
+func newLogEncoder(w io.Writer, jsonFormat bool) logEncoder {
+	if jsonFormat {
+		return &logJSONEncoder{enc: json.NewEncoder(w)}
+	}
+	return &logTextEncoder{w: w}
 }
 
 func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
@@ -99,6 +137,7 @@ func (app *Ecsta) RunLogs(ctx context.Context, opt *LogsOption) error {
 				endTime:       endTime,
 				follow:        opt.Follow,
 				containerName: name,
+				json:          opt.JSON,
 			}); err != nil {
 				slog.Error("failed to follow logs", "error", err)
 			}
@@ -118,6 +157,7 @@ type followOption struct {
 	startTime     time.Time
 	endTime       time.Time
 	follow        bool
+	json          bool
 }
 
 func (o followOption) Follow() bool {
@@ -135,6 +175,7 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	if !opt.Follow() {
 		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
 	}
+	enc := newLogEncoder(os.Stdout, opt.json)
 
 FOLLOW:
 	for {
@@ -168,11 +209,13 @@ FOLLOW:
 			if !opt.Follow() && ts.After(opt.endTime) {
 				break FOLLOW
 			}
-			fmt.Println(strings.Join([]string{
-				ts.Format(time.RFC3339Nano),
-				opt.containerName,
-				aws.ToString(e.Message),
-			}, "\t"))
+			if err := enc.Encode(&logRecord{
+				Time:      ts.Format(time.RFC3339Nano),
+				Msg:       aws.ToString(e.Message),
+				Container: opt.containerName,
+			}); err != nil {
+				return fmt.Errorf("failed to encode log record: %w", err)
+			}
 		}
 		if aws.ToString(nextToken) == aws.ToString(res.NextForwardToken) {
 			if !opt.Follow() {

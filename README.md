@@ -187,7 +187,7 @@ Flags:
 Run [tracer](https://github.com/fujiwara/tracer). No need to install `tracer` command.
 
 ```
-Usage: ecsta trace
+Usage: ecsta trace [flags]
 
 Trace a task
 
@@ -197,7 +197,7 @@ Flags:
       --sns-topic-arn=STRING        SNS topic ARN
       --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
-      --json                        output JSON linesUsage: ecsta trace
+  -j, --json                        output JSON linesUsage: ecsta trace
 ```
 
 ### Logs
@@ -208,13 +208,14 @@ Usage: ecsta logs
 Show log messages of a task
 
 Flags:
-     --id=STRING                   task ID
+      --id=STRING                   task ID
   -s, --start-time=STRING           a start time of logs
   -d, --duration=1m                 log timestamps duration
   -f, --follow                      follow logs
       --container=STRING            container name
       --family=FAMILY               task definition family name
       --service=SERVICE             ECS service name
+  -j, --json                        output as JSON lines
 ```
 
 `--start-time` accepts flexible time formats (ISO8601, RFC3339, and etc). See also (tkuchiki/parsetime)[https://github.com/tkuchiki/parsetime].

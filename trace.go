@@ -14,7 +14,7 @@ type TraceOption struct {
 	SNSTopicArn string        `help:"SNS topic ARN"`
 	Family      *string       `help:"task definition family name"`
 	Service     *string       `help:"ECS service name"`
-	JSON        bool          `help:"output JSON lines"`
+	JSON        bool          `help:"output JSON lines" short:"j"`
 }
 
 func (app *Ecsta) RunTrace(ctx context.Context, opt *TraceOption) error {
