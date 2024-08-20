@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -80,12 +81,39 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 	return out.Tasks, nil
 }
 
+func newAnyIterator[IN any, OUT any, OPT any](ctx context.Context, do func(context.Context, *IN, ...OPT) (*OUT, error), next func(*IN, *OUT) bool, in *IN, opt ...OPT) func(func(*OUT, error) bool) {
+	return func(yield func(*OUT, error) bool) {
+		for {
+			slog.Info("do", "in", in)
+			out, err := do(ctx, in, opt...)
+			if err != nil {
+				yield(nil, err)
+				return
+			}
+			if !yield(out, err) {
+				return
+			}
+			if !next(in, out) { // if next returns true, has a next page. continue
+				return
+			}
+		}
+	}
+}
+
+func ecsListTasksNext(in *ecs.ListTasksInput, out *ecs.ListTasksOutput) bool {
+	if out.NextToken == nil {
+		return false
+	}
+	in.NextToken = out.NextToken
+	return true
+}
+
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
 	var inputs []*ecs.ListTasksInput
 	if opt.family != nil && opt.service != nil {
 		// LisTasks does not support family and service at the same time
-		// spilit into two requests
+		// split into two requests
 		inputs = []*ecs.ListTasksInput{
 			{Cluster: &app.cluster, Family: opt.family},
 			{Cluster: &app.cluster, ServiceName: opt.service},
@@ -99,18 +127,16 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 		for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
 			input := input
 			input.DesiredStatus = status
-			tp := ecs.NewListTasksPaginator(app.ecs, input)
-			for tp.HasMorePages() {
-				to, err := tp.NextPage(ctx)
+			for res, err := range newAnyIterator(ctx, app.ecs.ListTasks, ecsListTasksNext, input) {
 				if err != nil {
 					return nil, err
 				}
-				if len(to.TaskArns) == 0 {
+				if len(res.TaskArns) == 0 {
 					continue
 				}
 				out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
 					Cluster: &app.cluster,
-					Tasks:   to.TaskArns,
+					Tasks:   res.TaskArns,
 					Include: []types.TaskField{"TAGS"},
 				})
 				if err != nil {
