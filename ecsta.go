@@ -80,12 +80,28 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 	return out.Tasks, nil
 }
 
+func ecsNewListTasksIterator(ctx context.Context, c *ecs.Client, in *ecs.ListTasksInput) func(func(*ecs.ListTasksOutput, error) bool) {
+	return func(yield func(*ecs.ListTasksOutput, error) bool) {
+		for {
+			out, err := c.ListTasks(ctx, in)
+			if err != nil {
+				yield(nil, err)
+				return
+			}
+			if !yield(out, err) || out.NextToken == nil {
+				return
+			}
+			in.NextToken = out.NextToken
+		}
+	}
+}
+
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
 	var inputs []*ecs.ListTasksInput
 	if opt.family != nil && opt.service != nil {
 		// LisTasks does not support family and service at the same time
-		// spilit into two requests
+		// split into two requests
 		inputs = []*ecs.ListTasksInput{
 			{Cluster: &app.cluster, Family: opt.family},
 			{Cluster: &app.cluster, ServiceName: opt.service},
@@ -99,18 +115,16 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 		for _, status := range []types.DesiredStatus{types.DesiredStatusRunning, types.DesiredStatusStopped} {
 			input := input
 			input.DesiredStatus = status
-			tp := ecs.NewListTasksPaginator(app.ecs, input)
-			for tp.HasMorePages() {
-				to, err := tp.NextPage(ctx)
+			for res, err := range ecsNewListTasksIterator(ctx, app.ecs, input) {
 				if err != nil {
 					return nil, err
 				}
-				if len(to.TaskArns) == 0 {
+				if len(res.TaskArns) == 0 {
 					continue
 				}
 				out, err := app.ecs.DescribeTasks(ctx, &ecs.DescribeTasksInput{
 					Cluster: &app.cluster,
-					Tasks:   to.TaskArns,
+					Tasks:   res.TaskArns,
 					Include: []types.TaskField{"TAGS"},
 				})
 				if err != nil {

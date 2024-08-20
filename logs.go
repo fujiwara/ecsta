@@ -124,8 +124,34 @@ func (o followOption) Follow() bool {
 	return o.follow || o.endTime.IsZero()
 }
 
+func (app *Ecsta) getLogEventsIterator(ctx context.Context, in *cloudwatchlogs.GetLogEventsInput) func(func(*cloudwatchlogs.GetLogEventsOutput, error) bool) {
+	return func(yield func(*cloudwatchlogs.GetLogEventsOutput, error) bool) {
+		for {
+			res, err := app.logs.GetLogEvents(ctx, in)
+			if err != nil {
+				var ne *logsTypes.ResourceNotFoundException
+				// log group or log stream not found, retry after 5 seconds
+				if errors.As(err, &ne) {
+					sleepWithContext(ctx, 5*time.Second)
+				} else {
+					yield(nil, err)
+				}
+				return
+			}
+			if !yield(res, nil) {
+				return
+			}
+			if res.NextForwardToken == nil {
+				return
+			}
+			in.NextToken = res.NextForwardToken
+			in.StartTime = nil
+			in.EndTime = nil
+		}
+	}
+}
+
 func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
-	var nextToken *string
 	in := &cloudwatchlogs.GetLogEventsInput{
 		LogGroupName:  &opt.logGroup,
 		LogStreamName: &opt.logStream,
@@ -135,38 +161,14 @@ func (app *Ecsta) followLogs(ctx context.Context, opt *followOption) error {
 	if !opt.Follow() {
 		in.EndTime = aws.Int64(timeToInt64msec(opt.endTime))
 	}
-
-FOLLOW:
-	for {
-		if err := sleepWithContext(ctx, time.Second); err != nil {
-			if errors.Is(err, context.Canceled) {
-				return nil
-			}
-			return err
-		}
-		if nextToken != nil {
-			in = &cloudwatchlogs.GetLogEventsInput{
-				LogGroupName:  &opt.logGroup,
-				LogStreamName: &opt.logStream,
-				Limit:         aws.Int32(1000),
-				NextToken:     nextToken,
-			}
-		}
-		res, err := app.logs.GetLogEvents(ctx, in)
+	for res, err := range app.getLogEventsIterator(ctx, in) {
 		if err != nil {
-			var ne *logsTypes.ResourceNotFoundException
-			// log group or log stream not found, retry after 5 seconds
-			if errors.As(err, &ne) {
-				sleepWithContext(ctx, 5*time.Second)
-			} else {
-				slog.Warn("failed to get log events", "error", err)
-			}
-			continue
+			return err
 		}
 		for _, e := range res.Events {
 			ts := msecToTime(aws.ToInt64(e.Timestamp))
 			if !opt.Follow() && ts.After(opt.endTime) {
-				break FOLLOW
+				break
 			}
 			fmt.Println(strings.Join([]string{
 				ts.Format(time.RFC3339Nano),
@@ -174,13 +176,6 @@ FOLLOW:
 				aws.ToString(e.Message),
 			}, "\t"))
 		}
-		if aws.ToString(nextToken) == aws.ToString(res.NextForwardToken) {
-			if !opt.Follow() {
-				break FOLLOW
-			}
-			continue
-		}
-		nextToken = res.NextForwardToken
 	}
 	return nil
 }
