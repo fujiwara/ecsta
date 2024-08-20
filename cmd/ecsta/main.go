@@ -22,7 +22,7 @@ func main() {
 
 	err := ecsta.RunCLI(ctx, os.Args[1:])
 	if err != nil {
-		slog.Error("failed to run", "error", err)
+		slog.Error(err.Error())
 		os.Exit(1)
 	}
 }
