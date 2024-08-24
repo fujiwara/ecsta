@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
+      - name: download-assets
+        run: make download-assets
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

@@ -2,6 +2,7 @@ package ecsta
 
 import (
 	"context"
+	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -219,15 +220,17 @@ type bootAgentTmplData struct {
 	Filename string
 }
 
+//go:embed assets/tncl-x86_64-linux-musl
+var agentBinaryAMD64 []byte
+
+//go:embed assets/tncl-aarch64-linux-musl
+var agentBinaryARM64 []byte
+
 func bootAgent(isWriter bool, port int, filename string) string {
 	buf := &strings.Builder{}
 
-	b, err := os.ReadFile("./assets/tncl") // TODO embed
-	if err != nil {
-		panic(err)
-	}
 	bootAgentTmpl.Execute(buf, &bootAgentTmplData{
-		Binary:   base64.StdEncoding.EncodeToString(b),
+		Binary:   base64.StdEncoding.EncodeToString(agentBinaryAMD64),
 		Cmd:      "/tmp/tncl",
 		Port:     port,
 		IsWriter: isWriter,

@@ -21,6 +21,7 @@ jobs:
 
       - name: Build & Test
         run: |
+          make download-assets
           go test -race -v ./...
         env:
           TZ: Asia/Tokyo # for time.Local
