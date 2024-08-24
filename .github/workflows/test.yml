@@ -25,3 +25,4 @@ jobs:
           go test -race -v ./...
         env:
           TZ: Asia/Tokyo # for time.Local
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
