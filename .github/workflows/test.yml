@@ -10,17 +10,19 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+          go-version-file: ./go.mod
+          cache: true
 
       - name: Build & Test
         run: |
+          go mod download
           make download-assets
           go test -race -v ./...
         env:
