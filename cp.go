@@ -47,14 +47,59 @@ func parseCpTarget(s string) (string, string) {
 	return "", s
 }
 
+//go:embed assets/tncl-x86_64-linux-musl
+var agentBinaryX86_64 []byte
+
+//go:embed assets/tncl-aarch64-linux-musl
+var agentBinaryARM64 []byte
+
+var bootAgentTmpl = template.Must(template.New("").Parse(`sh -e -c 'cat <<EOF_OF_AGENT_COMMAND | base64 -d > {{.Cmd}}
+{{.Base64Binary}}
+EOF_OF_AGENT_COMMAND
+
+chmod +x {{.Cmd}}
+{{.Cmd}} {{.Port}} {{if .Upload}}>{{else}}<{{end}} {{.Filename}}
+'
+`))
+
+type bootAgentTmplData struct {
+	Base64Binary string
+	Cmd          string
+	Port         int
+	Upload       bool
+	Filename     string
+}
+
 type cpTask struct {
-	taskArn          string
-	container        string
-	bootAgentCommand string
-	upload           bool
-	localFile        string
-	remoteFile       string
-	port             int
+	taskArn     string
+	taskCPUArch string
+	container   string
+	upload      bool
+	localFile   string
+	remoteFile  string
+	port        int
+}
+
+func (cp *cpTask) bootAgent() string {
+	buf := &strings.Builder{}
+	var b64 string
+	switch cp.taskCPUArch {
+	case "ARM64":
+		b64 = base64.StdEncoding.EncodeToString(agentBinaryARM64)
+	case "x86_64":
+		b64 = base64.StdEncoding.EncodeToString(agentBinaryX86_64)
+	default:
+		slog.Warn("unknown CPU architecture", "arch", cp.taskCPUArch)
+		b64 = base64.StdEncoding.EncodeToString(agentBinaryX86_64) // default
+	}
+	bootAgentTmpl.Execute(buf, &bootAgentTmplData{
+		Base64Binary: b64,
+		Cmd:          "/tmp/tncl",
+		Port:         cp.port,
+		Upload:       cp.upload,
+		Filename:     cp.remoteFile,
+	})
+	return buf.String()
 }
 
 func (app *Ecsta) prepareCp(ctx context.Context, opt *CpOption) (*cpTask, error) {
@@ -66,12 +111,12 @@ func (app *Ecsta) prepareCp(ctx context.Context, opt *CpOption) (*cpTask, error)
 	if strings.HasSuffix(destFile, "/") { // directory
 		destFile += filepath.Base(srcFile) // append basename
 	}
+
 	switch {
 	case srcHost == "" && destHost == "":
 		return nil, fmt.Errorf("either source or destination must be remote")
 	case srcHost == "": // local -> remote
 		slog.Info("cp local to remote", "src", srcFile, "dest", destFile)
-		cp.bootAgentCommand = bootAgent(true, cp.port, destFile) // write remote file
 		cp.localFile = srcFile
 		cp.remoteFile = destFile
 		cp.upload = true
@@ -80,7 +125,6 @@ func (app *Ecsta) prepareCp(ctx context.Context, opt *CpOption) (*cpTask, error)
 		}
 	case destHost == "": // remote -> local
 		slog.Info("cp remote to local", "src", srcFile, "dest", destFile)
-		cp.bootAgentCommand = bootAgent(false, opt.Port, srcFile) // read remote file
 		cp.localFile = destFile
 		cp.remoteFile = srcFile
 		cp.upload = false
@@ -100,6 +144,12 @@ func (app *Ecsta) prepareCp(ctx context.Context, opt *CpOption) (*cpTask, error)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to select tasks: %w", err)
+	}
+	for _, attr := range task.Attributes {
+		if *attr.Name == "ecs.cpu-architecture" {
+			cp.taskCPUArch = *attr.Value
+			break
+		}
 	}
 
 	container, err := app.findContainerName(ctx, task, opt.Container)
@@ -131,7 +181,7 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 		err := app.RunExec(ctx, &ExecOption{
 			ID:          cp.taskArn,
 			Container:   cp.container,
-			Command:     cp.bootAgentCommand,
+			Command:     cp.bootAgent(),
 			catchSignal: true,
 		})
 		down.Store(true)
@@ -201,42 +251,6 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 	}
 	succeeded.Store(true)
 	return nil
-}
-
-var bootAgentTmpl = template.Must(template.New("").Parse(`sh -e -c 'cat <<EOF_OF_AGENT_COMMAND | base64 -d > {{.Cmd}}
-{{.Binary}}
-EOF_OF_AGENT_COMMAND
-
-chmod +x {{.Cmd}}
-{{.Cmd}} {{.Port}} {{if .IsWriter}}>{{else}}<{{end}} {{.Filename}}
-'
-`))
-
-type bootAgentTmplData struct {
-	Binary   string
-	Cmd      string
-	Port     int
-	IsWriter bool
-	Filename string
-}
-
-//go:embed assets/tncl-x86_64-linux-musl
-var agentBinaryAMD64 []byte
-
-//go:embed assets/tncl-aarch64-linux-musl
-var agentBinaryARM64 []byte
-
-func bootAgent(isWriter bool, port int, filename string) string {
-	buf := &strings.Builder{}
-
-	bootAgentTmpl.Execute(buf, &bootAgentTmplData{
-		Binary:   base64.StdEncoding.EncodeToString(agentBinaryAMD64),
-		Cmd:      "/tmp/tncl",
-		Port:     port,
-		IsWriter: isWriter,
-		Filename: filename,
-	})
-	return buf.String()
 }
 
 type ncClient struct {
