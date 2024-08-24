@@ -22,6 +22,7 @@ type CLI struct {
 	Portforward *PortforwardOption `cmd:"" help:"Forward a port of a task"`
 	Stop        *StopOption        `cmd:"" help:"Stop a task"`
 	Trace       *TraceOption       `cmd:"" help:"Trace a task"`
+	CP          *CpOption        `cmd:"" help:"Copy files from/to a task"`
 	Version     struct{}           `cmd:"" help:"Show version"`
 }
 
@@ -62,6 +63,8 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 		return app.RunStop(ctx, cli.Stop)
 	case "trace":
 		return app.RunTrace(ctx, cli.Trace)
+	case "cp":
+		return app.RunCp(ctx, cli.CP)
 	case "version":
 		fmt.Printf("ecsta %s\n", Version)
 		return nil
