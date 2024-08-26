@@ -210,7 +210,7 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 			line := scanner.Text()
 			slog.Debug(line)
 			// tncl says "listening on port ..." when ready for connection
-			if strings.Contains(line, "listening on port") && !closed {
+			if !closed && strings.Contains(line, "listening on port") {
 				close(ready)
 				closed = true
 			}
