@@ -124,16 +124,16 @@ func (app *Ecsta) prepareCp(ctx context.Context, opt *CpOption) (*cpTask, error)
 		cp.localFile = srcFile
 		cp.remoteFile = destFile
 		cp.upload = true
-		if srcHost != "_" { // task ID
-			opt.ID = srcHost
+		if destHost != "_" { // task ID
+			opt.ID = destHost
 		}
 	case destHost == "": // remote -> local
 		slog.Info("cp remote to local", "src", srcFile, "dest", destFile)
 		cp.localFile = destFile
 		cp.remoteFile = srcFile
 		cp.upload = false
-		if destHost != "_" { // task ID
-			opt.ID = destHost
+		if srcHost != "_" { // task ID
+			opt.ID = srcHost
 		}
 	default:
 		return nil, fmt.Errorf("both source and destination must not be remote")
