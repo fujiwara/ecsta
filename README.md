@@ -265,7 +265,7 @@ $ ecsta cp 75dc060ef49b4ba1b2a33581dc5b876f:/tmp/file.txt /path/to/file.txt  # c
 
 Requirements:
 - The task must have the ECS Exec feature enabled.
-- The task must have `sh`, `cat`, `base64`, and `chmod` commands.
+- The task must have `sh`, `base64`, and `chmod` commands.
 
 ### `--task-format-query(-q)` option
 
