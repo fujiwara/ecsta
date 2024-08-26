@@ -261,11 +261,14 @@ $ ecsta cp 75dc060ef49b4ba1b2a33581dc5b876f:/tmp/file.txt /path/to/file.txt  # c
    - The server is terminated when the file transfer is completed.
 2. `ecsta` starts a port forwarding to the temporary server.
 3. `ecsta` connects to the temporary server via the port forwarding.
-4. `ecsta` sends or receives files via the connection.
+4. `ecsta` sends or receives a file via the connection.
 
 Requirements:
 - The task must have the ECS Exec feature enabled.
 - The task must have `sh`, `base64`, and `chmod` commands.
+
+Limitations:
+- Multiple files and directories are not supported.
 
 ### `--task-format-query(-q)` option
 
