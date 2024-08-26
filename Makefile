@@ -1,7 +1,6 @@
 .PHONY: test install clean
 
-TNCL_VERSION=v0.0.3
-
+TNCL_VERSION=v0.0.4
 
 test:
 	TZ=Asia/Tokyo go test ./...

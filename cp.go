@@ -1,6 +1,7 @@
 package ecsta
 
 import (
+	"bufio"
 	"context"
 	_ "embed"
 	"encoding/base64"
@@ -53,12 +54,13 @@ var agentBinaryX86_64 []byte
 //go:embed assets/tncl-aarch64-linux-musl
 var agentBinaryARM64 []byte
 
-var bootAgentTmpl = template.Must(template.New("").Parse(`sh -e -c 'cat <<EOF_OF_AGENT_COMMAND | base64 -d > {{.Cmd}}
+var bootAgentTmpl = template.Must(template.New("").Parse(
+	`sh -e -c 'base64 -d <<EOF_OF_AGENT_COMMAND > {{.Cmd}}
 {{.Base64Binary}}
 EOF_OF_AGENT_COMMAND
 
 chmod +x {{.Cmd}}
-{{.Cmd}} {{.Port}} {{if .Upload}}>{{else}}<{{end}} {{.Filename}}
+{{.Cmd}} {{.Port}} {{if .Upload}}>{{else}}<{{end}} "{{.Filename}}"
 '
 `))
 
@@ -168,10 +170,11 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	var succeeded, down atomic.Bool
-	succeeded.Store(false)
-	down.Store(false)
 
+	var succeeded atomic.Bool
+	succeeded.Store(false)
+	down := make(chan struct{})
+	agentStdoutR, agentStdoutW := io.Pipe()
 	agent := &sync.WaitGroup{}
 	agent.Add(1)
 	// boot agent via exec
@@ -183,8 +186,10 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 			Container:   cp.container,
 			Command:     cp.bootAgent(),
 			catchSignal: true,
+			stdout:      agentStdoutW,
+			stderr:      agentStdoutW, // stderr is also captured
 		})
-		down.Store(true)
+		close(down)
 		if err != nil {
 			if succeeded.Load() {
 				slog.Debug("agent stopped", "error", err)
@@ -193,11 +198,29 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 			slog.Error("failed to boot agent", "error", err)
 		}
 	}(ctx)
-	time.Sleep(3 * time.Second) // wait for agent boot
-	// TODO: wait for the agent to be ready
-	if down.Load() {
+
+	// read agent stdout. wait for agent is ready
+	ready := make(chan struct{})
+	go func(ctx context.Context) {
+		scanner := bufio.NewScanner(agentStdoutR)
+		closed := false
+		for scanner.Scan() {
+			line := scanner.Text()
+			slog.Debug(line)
+			// tncl says "listening on port ..." when ready for connection
+			if strings.Contains(line, "listening on port") && !closed {
+				close(ready)
+				closed = true
+			}
+		}
+	}(ctx)
+
+	select {
+	case <-down:
 		cancel()
 		return fmt.Errorf("agent stopped")
+	case <-ready:
+		slog.Info("agent is ready")
 	}
 
 	portforward := &sync.WaitGroup{}
@@ -211,6 +234,8 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 			Container:  cp.container,
 			LocalPort:  cp.port,
 			RemotePort: cp.port,
+			stdout:     agentStdoutW,
+			stderr:     agentStdoutW, // stderr is also captured
 		})
 		if err != nil {
 			if succeeded.Load() {
@@ -250,6 +275,7 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 		}
 	}
 	succeeded.Store(true)
+	slog.Info("cp done")
 	return nil
 }
 
