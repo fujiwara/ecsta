@@ -85,11 +85,13 @@ type cpTask struct {
 func (cp *cpTask) bootAgent() string {
 	buf := &strings.Builder{}
 	var b64 string
-	switch cp.taskCPUArch {
-	case "ARM64":
+	switch strings.ToLower(cp.taskCPUArch) {
+	case "arm64":
 		b64 = base64.StdEncoding.EncodeToString(agentBinaryARM64)
+		slog.Debug("arm64 architecture detected")
 	case "x86_64":
 		b64 = base64.StdEncoding.EncodeToString(agentBinaryX86_64)
+		slog.Debug("x86_64 architecture detected")
 	default:
 		slog.Warn("unknown CPU architecture", "arch", cp.taskCPUArch)
 		b64 = base64.StdEncoding.EncodeToString(agentBinaryX86_64) // default
