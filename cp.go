@@ -258,7 +258,7 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 
 	// connect to the agent
 	slog.Info("connecting to agent via portforward", "task", cp.taskArn, "container", cp.container, "port", opt.Port)
-	client, err := newNcClient("localhost", opt.Port, opt.Progress)
+	client, err := newNcClient("localhost", opt)
 	if err != nil {
 		return fmt.Errorf("failed to connect to agent: %w", err)
 	}
@@ -290,19 +290,19 @@ func (c *ncClient) Close() error {
 	return c.conn.Close()
 }
 
-func newNcClient(host string, port int, progress bool) (*ncClient, error) {
+func newNcClient(host string, opt *CpOption) (*ncClient, error) {
+	slog.Info("connecting", "host", host, "port", opt.Port)
 	for {
-		slog.Info("connecting", "host", host, "port", port)
 		conn, err := net.DialTimeout(
-			"tcp", fmt.Sprintf("%s:%d", host, port), 10*time.Second,
+			"tcp", fmt.Sprintf("%s:%d", host, opt.Port), 10*time.Second,
 		)
 		if err != nil {
 			time.Sleep(1 * time.Second)
 			slog.Debug("retrying", "error", err)
 			continue
 		}
-		slog.Info("connected", "host", host, "port", port)
-		return &ncClient{conn: conn, progress: progress}, nil
+		slog.Info("connected", "host", host, "port", opt.Port)
+		return &ncClient{conn: conn, progress: opt.Progress}, nil
 	}
 }
 
