@@ -222,6 +222,54 @@ Flags:
 
 When `--start-time` and `--follow` is specified both, `--start-time` may not work correctly.
 
+### copy files
+
+```console
+Usage: ecsta cp <src> <dest> [flags]
+
+Copy files from/to a task
+
+Arguments:
+  <src>     Source
+  <dest>    Destination
+
+Flags:
+      --port=12345          port number for file transfer
+      --[no-]progress       show progress bar
+      --id=STRING           task ID
+      --container=STRING    container name
+      --family=FAMILY       task definition family name
+      --service=SERVICE     ECS service name
+```
+
+Example:
+
+```console
+$ ecsta cp /path/to/file.txt _:/tmp/file.txt  # copy file to a task(_ is the selected task)
+$ ecsta cp 75dc060ef49b4ba1b2a33581dc5b876f:/tmp/file.txt /path/to/file.txt  # copy file from the task.
+```
+
+`ecsta cp` copies files from/to a task.
+
+#### How to work `ecsta cp`
+
+`ecsta cp` works as below.
+
+1. `ecsta` starts a temporary TCP server on the task vie ECS Exec.
+   - The server listens on the specified port (default is 12345).
+   - [tncl](https://github.com/fujiwara/tncl) is used as the server. It is a tiny TCP server that like `nc -l` command.
+   - The server is terminated when the file transfer is completed.
+2. `ecsta` starts a port forwarding to the temporary server.
+3. `ecsta` connects to the temporary server via the port forwarding.
+4. `ecsta` sends or receives a file via the connection.
+
+Requirements:
+- The task must have the ECS Exec feature enabled.
+- The task must have `sh`, `base64`, and `chmod` commands.
+
+Limitations:
+- Multiple files and directories are not supported.
+
 ### `--task-format-query(-q)` option
 
 This option provides a formatter by [jq](https://stedolan.github.io/jq/) query. The query processes tasks JSON (that output equals to ecsta describe) in task selector outputs.

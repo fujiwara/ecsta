@@ -3,6 +3,7 @@ package ecsta
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,9 @@ type PortforwardOption struct {
 	L          string  `name:"L" help:"short expression of local-port:remote-host:remote-port" short:"L"`
 	Family     *string `help:"task definition family name"`
 	Service    *string `help:"ECS service name"`
+
+	stdout io.Writer
+	stderr io.Writer
 }
 
 func (opt *PortforwardOption) ParseL() error {
@@ -100,5 +104,5 @@ func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) er
 		StreamUrl:  res.StreamUrl,
 		TokenValue: res.TokenValue,
 	}
-	return app.runSessionManagerPlugin(ctx, task, sess, target)
+	return app.runSessionManagerPlugin(ctx, task, sess, target, opt.stdout, opt.stderr)
 }

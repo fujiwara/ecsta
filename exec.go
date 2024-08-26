@@ -26,9 +26,20 @@ type ExecOption struct {
 	Container string  `help:"container name"`
 	Family    *string `help:"task definition family name"`
 	Service   *string `help:"ECS service name"`
+
+	catchSignal bool
+	stdout      io.Writer
+	stderr      io.Writer
 }
 
 func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
+	if opt.stdout == nil {
+		opt.stdout = os.Stdout
+	}
+	if opt.stderr == nil {
+		opt.stderr = os.Stderr
+	}
+
 	if err := app.SetCluster(ctx); err != nil {
 		return err
 	}
@@ -61,11 +72,13 @@ func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
 		return fmt.Errorf("failed to build ssm request parameters: %w", err)
 	}
 
-	signal.Ignore(os.Interrupt)
-	return app.runSessionManagerPlugin(ctx, task, out.Session, target)
+	if !opt.catchSignal {
+		signal.Ignore(os.Interrupt)
+	}
+	return app.runSessionManagerPlugin(ctx, task, out.Session, target, opt.stdout, opt.stderr)
 }
 
-func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, session *types.Session, target string) error {
+func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, session *types.Session, target string, stdout, stderr io.Writer) error {
 	endpoint, err := app.Endpoint(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get endpoint: %w", err)
@@ -93,6 +106,14 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 		string(ssmreq),
 		endpoint,
 	)
+	// send SIGINT to session manager plugin the context is canceled.
+	cmd.Cancel = func() error {
+		slog.Info(fmt.Sprintf("sending SIGINT to %s", SessionManagerPluginBinary))
+		return cmd.Process.Signal(os.Interrupt)
+	}
+	// send SIGKILL after 3 seconds if SIGINT is ignored.
+	cmd.WaitDelay = 3 * time.Second
+
 	go func() {
 		if err := app.watchTaskUntilStopping(ctx, *task.TaskArn); err != nil {
 			slog.Info(err.Error())
@@ -101,8 +122,8 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 	}()
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
 		return cmd.Run()
 	} else {
 		slog.Info("running in non-interactive mode (tty is not available)")
@@ -112,7 +133,7 @@ func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, 
 		}
 		defer ptmx.Close()
 		go func() {
-			io.Copy(os.Stdout, ptmx)
+			io.Copy(stdout, ptmx)
 		}()
 		return cmd.Wait()
 	}

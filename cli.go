@@ -3,6 +3,7 @@ package ecsta
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/alecthomas/kong"
@@ -13,6 +14,7 @@ type CLI struct {
 	Region          string `help:"AWS region" short:"r" env:"AWS_REGION"`
 	Output          string `help:"output format (table, tsv, json)" short:"o" default:"table" enum:"table,tsv,json" env:"ECSTA_OUTPUT"`
 	TaskFormatQuery string `help:"A jq query to format task in selector" short:"q" env:"ECSTA_TASK_FORMAT_QUERY"`
+	Debug           bool   `help:"enable debug output" env:"ECSTA_DEBUG"`
 
 	Configure   *ConfigureOption   `cmd:"" help:"Create a configuration file of ecsta"`
 	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
@@ -22,6 +24,7 @@ type CLI struct {
 	Portforward *PortforwardOption `cmd:"" help:"Forward a port of a task"`
 	Stop        *StopOption        `cmd:"" help:"Stop a task"`
 	Trace       *TraceOption       `cmd:"" help:"Trace a task"`
+	CP          *CpOption          `cmd:"" help:"Copy files from/to a task"`
 	Version     struct{}           `cmd:"" help:"Show version"`
 }
 
@@ -35,6 +38,12 @@ func RunCLI(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	if cli.Debug {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	} else {
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	}
+
 	app, err := New(ctx, cli.Region, cli.Cluster)
 	if err != nil {
 		return err
@@ -62,6 +71,8 @@ func (app *Ecsta) Dispatch(ctx context.Context, command string, cli *CLI) error 
 		return app.RunStop(ctx, cli.Stop)
 	case "trace":
 		return app.RunTrace(ctx, cli.Trace)
+	case "cp":
+		return app.RunCp(ctx, cli.CP)
 	case "version":
 		fmt.Printf("ecsta %s\n", Version)
 		return nil
