@@ -7,7 +7,7 @@ toolchain go1.23.0
 require (
 	github.com/Songmu/flextime v0.1.0
 	github.com/Songmu/prompter v0.5.1
-	github.com/alecthomas/kong v0.9.0
+	github.com/alecthomas/kong v1.2.1
 	github.com/aws/aws-sdk-go-v2 v1.30.4
 	github.com/aws/aws-sdk-go-v2/config v1.27.28
 	github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs v1.37.4
