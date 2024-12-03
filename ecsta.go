@@ -283,13 +283,16 @@ func (app *Ecsta) SetCluster(ctx context.Context) error {
 }
 
 func (app *Ecsta) Endpoint(ctx context.Context) (string, error) {
-	out, err := app.ecs.DiscoverPollEndpoint(ctx, &ecs.DiscoverPollEndpointInput{
-		Cluster: &app.cluster,
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to discover poll endpoint: %w", err)
+	param := ecs.EndpointParameters{
+		Region:       aws.String(app.region),
+		UseFIPS:      aws.Bool(false),
+		UseDualStack: aws.Bool(false),
 	}
-	return *out.Endpoint, nil
+	eo, err := app.ecs.Options().EndpointResolverV2.ResolveEndpoint(ctx, param)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve endpoint: %w", err)
+	}
+	return eo.URI.String(), nil
 }
 
 func (app *Ecsta) findContainerName(ctx context.Context, task types.Task, name string) (string, error) {
