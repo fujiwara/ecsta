@@ -19,7 +19,7 @@ require (
 	github.com/itchyny/gojq v0.12.16
 	github.com/mattn/go-isatty v0.0.20
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/samber/lo v1.47.0
+	github.com/samber/lo v1.49.1
 	github.com/schollz/progressbar/v3 v3.14.6
 	github.com/tkuchiki/parsetime v0.3.0
 )
@@ -46,6 +46,6 @@ require (
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
