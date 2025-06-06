@@ -4,9 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/fujiwara/sloghandler"
+	"github.com/mattn/go-isatty"
 )
 
 type CLI struct {
@@ -15,6 +18,7 @@ type CLI struct {
 	Output          string `help:"output format (table, tsv, json)" short:"o" default:"table" enum:"table,tsv,json" env:"ECSTA_OUTPUT"`
 	TaskFormatQuery string `help:"A jq query to format task in selector" short:"q" env:"ECSTA_TASK_FORMAT_QUERY"`
 	Debug           bool   `help:"enable debug output" env:"ECSTA_DEBUG"`
+	LogFormat       string `help:"log format (text, json)" short:"l" default:"text" enum:"text,json" env:"ECSTA_LOG_FORMAT"`
 
 	Configure   *ConfigureOption   `cmd:"" help:"Create a configuration file of ecsta"`
 	Describe    *DescribeOption    `cmd:"" help:"Describe tasks"`
@@ -38,11 +42,30 @@ func RunCLI(ctx context.Context, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Initialize logger with sloghandler
+	var handler slog.Handler
+	level := slog.LevelInfo
 	if cli.Debug {
-		slog.SetLogLoggerLevel(slog.LevelDebug)
-	} else {
-		slog.SetLogLoggerLevel(slog.LevelInfo)
+		level = slog.LevelDebug
 	}
+
+	switch cli.LogFormat {
+	case "json":
+		handler = slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	default: // text
+		// Enable color only if stderr is a terminal
+		useColor := isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())
+		handler = sloghandler.NewLogHandler(
+			os.Stderr,
+			&sloghandler.HandlerOptions{
+				HandlerOptions: slog.HandlerOptions{
+					Level: level,
+				},
+				Color: useColor,
+			},
+		)
+	}
+	slog.SetDefault(slog.New(handler))
 
 	app, err := New(ctx, cli.Region, cli.Cluster)
 	if err != nil {

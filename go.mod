@@ -1,8 +1,8 @@
 module github.com/fujiwara/ecsta
 
-go 1.22
+go 1.23.0
 
-toolchain go1.23.0
+toolchain go1.24.3
 
 require (
 	github.com/Songmu/flextime v0.1.0
@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecs v1.49.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.3
 	github.com/creack/pty v1.1.23
+	github.com/fujiwara/sloghandler v0.0.5
 	github.com/fujiwara/tracer v1.1.0
 	github.com/google/go-cmp v0.6.0
 	github.com/itchyny/gojq v0.12.16
@@ -38,13 +39,15 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tkuchiki/go-timezone v0.2.2 // indirect
-	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.22.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
