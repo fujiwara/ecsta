@@ -75,10 +75,10 @@ func (app *Ecsta) RunExec(ctx context.Context, opt *ExecOption) error {
 	if !opt.catchSignal {
 		signal.Ignore(os.Interrupt)
 	}
-	return app.runSessionManagerPlugin(ctx, task, out.Session, target, opt.stdout, opt.stderr)
+	return app.runSessionManagerPlugin(ctx, &task, out.Session, target, opt.stdout, opt.stderr)
 }
 
-func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task types.Task, session *types.Session, target string, stdout, stderr io.Writer) error {
+func (app *Ecsta) runSessionManagerPlugin(ctx context.Context, task *types.Task, session *types.Session, target string, stdout, stderr io.Writer) error {
 	endpoint, err := app.Endpoint(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get endpoint: %w", err)
