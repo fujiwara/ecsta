@@ -76,7 +76,7 @@ func TestPortforwardOption_ParseL(t *testing.T) {
 
 func TestPortforwardOption_DefaultPublicFlag(t *testing.T) {
 	opt := &PortforwardOption{}
-	// Publicフラグのデフォルト値はfalse（localhost only）
+	// Public flag defaults to false (localhost only)
 	expected := false
 	if opt.Public != expected {
 		t.Errorf("Default Public = %v, want %v", opt.Public, expected)
@@ -103,7 +103,7 @@ func TestPortforwardOption_PublicFlagValidation(t *testing.T) {
 			opt := &PortforwardOption{
 				Public: tt.public,
 			}
-			// Publicフラグの設定が正しく保持されるかテスト
+			// Test that Public flag setting is correctly preserved
 			if opt.Public != tt.public {
 				t.Errorf("Public = %v, want %v", opt.Public, tt.public)
 			}
