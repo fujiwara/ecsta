@@ -155,17 +155,22 @@ func (app *Ecsta) startTCPProxyToLocalhost(ctx context.Context, bindAddress stri
 
 	slog.Info("TCP proxy listening", "address", fmt.Sprintf("%s:%d", bindAddress, frontendPort), "backend", fmt.Sprintf("127.0.0.1:%d", backendPort))
 
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
+	// Close listener when context is cancelled
+	go func() {
+		<-ctx.Done()
+		listener.Close()
+	}()
 
+	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			slog.Error("failed to accept connection", "error", err)
-			continue
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				slog.Error("failed to accept connection", "error", err)
+				continue
+			}
 		}
 
 		go app.handleProxyConnection(ctx, conn, backendPort)

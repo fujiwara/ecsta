@@ -1,1 +1,6 @@
 .envrc
+.claude/
+ecsta
+testdata/config/ecsta/config.json
+testdata/config/ecsta/config.json.bak
+testdata/*.bak
