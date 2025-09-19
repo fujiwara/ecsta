@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.7.1](https://github.com/fujiwara/ecsta/compare/v0.7.0...v0.7.1) - 2025-09-19
+- Immutable release by @fujiwara in https://github.com/fujiwara/ecsta/pull/92
+
 ## [v0.7.0](https://github.com/fujiwara/ecsta/compare/v0.6.2...v0.7.0) - 2025-06-06
 - feat: add customizable log formatting with sloghandler by @fujiwara in https://github.com/fujiwara/ecsta/pull/86
 - docs: add CLAUDE.md with project-specific development guidelines by @fujiwara in https://github.com/fujiwara/ecsta/pull/87
