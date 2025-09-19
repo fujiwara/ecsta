@@ -2,7 +2,7 @@ module github.com/fujiwara/ecsta
 
 go 1.23.0
 
-toolchain go1.24.3
+toolchain go1.24.7
 
 require (
 	github.com/Songmu/flextime v0.1.0
