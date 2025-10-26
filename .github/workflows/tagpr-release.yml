@@ -41,11 +41,10 @@ jobs:
       - name: download
         run: |
           go mod download
-          make download-assets
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
-          version: '~> v2'
+          version: "~> v2"
           args: release
         if: ${{ steps.tagpr.outputs.tag != '' || github.event_name == 'workflow_dispatch' }}
