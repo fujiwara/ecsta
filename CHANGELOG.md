@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.7.2](https://github.com/fujiwara/ecsta/compare/v0.7.1...v0.7.2) - 2025-10-26
+- add assets files into repos. by @fujiwara in https://github.com/fujiwara/ecsta/pull/94
+
 ## [v0.7.1](https://github.com/fujiwara/ecsta/compare/v0.7.0...v0.7.1) - 2025-09-19
 - Immutable release by @fujiwara in https://github.com/fujiwara/ecsta/pull/92
 
