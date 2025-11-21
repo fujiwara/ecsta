@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.7.4](https://github.com/fujiwara/ecsta/compare/v0.7.3...v0.7.4) - 2025-11-21
+- supports `aws login` - update to aws-sdk-go-v2 v1.40.0 by @fujiwara in https://github.com/fujiwara/ecsta/pull/97
+
 ## [v0.7.3](https://github.com/fujiwara/ecsta/compare/v0.7.2...v0.7.3) - 2025-10-26
 
 ## [v0.7.2](https://github.com/fujiwara/ecsta/compare/v0.7.1...v0.7.2) - 2025-10-26
