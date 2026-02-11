@@ -175,12 +175,12 @@ func (t *taskFormatterJSON) AddTask(task types.Task) {
 func (t *taskFormatterJSON) Close() {
 }
 
-func MarshalJSONForAPI(v interface{}, query *gojq.Query) ([]byte, error) {
+func MarshalJSONForAPI(v any, query *gojq.Query) ([]byte, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
@@ -206,8 +206,8 @@ func MarshalJSONForAPI(v interface{}, query *gojq.Query) ([]byte, error) {
 	}
 }
 
-func UnmarshalJSONForStruct(src []byte, v interface{}) error {
-	m := map[string]interface{}{}
+func UnmarshalJSONForStruct(src []byte, v any) error {
+	m := map[string]any{}
 	if err := json.Unmarshal(src, &m); err != nil {
 		return err
 	}
@@ -233,26 +233,26 @@ func jsonKeyForStruct(s string) string {
 	return strings.ToUpper(s[:1]) + s[1:]
 }
 
-func walkMap(m map[string]interface{}, fn func(string) string) {
+func walkMap(m map[string]any, fn func(string) string) {
 	for key, value := range m {
 		delete(m, key)
 		m[fn(key)] = value
 		switch value := value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			walkMap(value, fn)
-		case []interface{}:
+		case []any:
 			walkArray(value, fn)
 		default:
 		}
 	}
 }
 
-func walkArray(a []interface{}, fn func(string) string) {
+func walkArray(a []any, fn func(string) string) {
 	for _, value := range a {
 		switch value := value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			walkMap(value, fn)
-		case []interface{}:
+		case []any:
 			walkArray(value, fn)
 		default:
 		}
