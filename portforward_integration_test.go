@@ -125,7 +125,7 @@ func TestTCPProxyToLocalhost(t *testing.T) {
 	// Cleanup: cancel contexts and wait for goroutines
 	cancel()
 	backendCancel()
-	
+
 	// Wait for goroutines to finish with timeout
 	done := make(chan struct{})
 	go func() {
