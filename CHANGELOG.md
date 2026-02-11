@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.8.0](https://github.com/fujiwara/ecsta/compare/v0.7.4...v0.8.0) - 2026-02-11
+- Update olekukonko/tablewriter to v1 by @fujiwara in https://github.com/fujiwara/ecsta/pull/99
+- Update all dependencies to latest by @fujiwara in https://github.com/fujiwara/ecsta/pull/101
+- go fix (modernize) by @fujiwara in https://github.com/fujiwara/ecsta/pull/102
+
 ## [v0.7.4](https://github.com/fujiwara/ecsta/compare/v0.7.3...v0.7.4) - 2025-11-21
 - supports `aws login` - update to aws-sdk-go-v2 v1.40.0 by @fujiwara in https://github.com/fujiwara/ecsta/pull/97
 
