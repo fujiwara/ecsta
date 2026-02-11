@@ -60,7 +60,6 @@ func runInternalFilter(ctx context.Context, src io.Reader, title string) (string
 			}
 			var found []string
 			for _, item := range items {
-				item := item
 				if item == input {
 					found = []string{item}
 					break

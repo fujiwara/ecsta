@@ -17,15 +17,15 @@ import (
 )
 
 type PortforwardOption struct {
-	ID          string  `help:"task ID"`
-	Container   string  `help:"container name"`
-	LocalPort   int     `help:"local port"`
-	RemotePort  int     `help:"remote port"`
-	RemoteHost  string  `help:"remote host"`
-	L           string  `name:"L" help:"short expression of local-port:remote-host:remote-port" short:"L"`
-	Family      *string `help:"task definition family name"`
-	Service     *string `help:"ECS service name"`
-	Public      bool    `help:"bind to all interfaces (0.0.0.0) instead of localhost only"`
+	ID         string  `help:"task ID"`
+	Container  string  `help:"container name"`
+	LocalPort  int     `help:"local port"`
+	RemotePort int     `help:"remote port"`
+	RemoteHost string  `help:"remote host"`
+	L          string  `name:"L" help:"short expression of local-port:remote-host:remote-port" short:"L"`
+	Family     *string `help:"task definition family name"`
+	Service    *string `help:"ECS service name"`
+	Public     bool    `help:"bind to all interfaces (0.0.0.0) instead of localhost only"`
 
 	stdout io.Writer
 	stderr io.Writer
@@ -129,14 +129,14 @@ func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) er
 	if opt.Public {
 		slog.Warn("TCP proxy will bind to all interfaces (0.0.0.0) - ensure proper network security", "port", opt.LocalPort)
 		slog.Info("Session Manager Plugin will use port", "port", ssmLocalPort)
-		
+
 		// Start TCP proxy in background
 		go func() {
 			if err := app.startTCPProxyToLocalhost(ctx, "0.0.0.0", opt.LocalPort, ssmLocalPort); err != nil {
 				slog.Error("TCP proxy failed", "error", err)
 			}
 		}()
-		
+
 		// Wait a bit for proxy to start
 		time.Sleep(200 * time.Millisecond)
 	}
@@ -194,7 +194,7 @@ func (app *Ecsta) handleProxyConnection(ctx context.Context, clientConn net.Conn
 	// Start bidirectional copy with context cancellation
 	var wg sync.WaitGroup
 	done := make(chan struct{})
-	
+
 	wg.Add(2)
 
 	// Copy from client to backend
@@ -232,4 +232,3 @@ func (app *Ecsta) handleProxyConnection(ctx context.Context, clientConn net.Conn
 		wg.Wait()
 	}
 }
-

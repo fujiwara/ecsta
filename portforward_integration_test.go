@@ -26,9 +26,7 @@ func TestTCPProxyToLocalhost(t *testing.T) {
 	backendCtx, backendCancel := context.WithCancel(context.Background())
 	defer backendCancel()
 
-	backendWg.Add(1)
-	go func() {
-		defer backendWg.Done()
+	backendWg.Go(func() {
 		for {
 			select {
 			case <-backendCtx.Done():
@@ -63,7 +61,7 @@ func TestTCPProxyToLocalhost(t *testing.T) {
 				}
 			}(conn)
 		}
-	}()
+	})
 
 	// Get a different port for proxy frontend
 	proxyListener, err := net.Listen("tcp", "0.0.0.0:0")
@@ -79,14 +77,12 @@ func TestTCPProxyToLocalhost(t *testing.T) {
 	defer cancel()
 
 	var proxyWg sync.WaitGroup
-	proxyWg.Add(1)
-	go func() {
-		defer proxyWg.Done()
+	proxyWg.Go(func() {
 		err := app.startTCPProxyToLocalhost(ctx, "0.0.0.0", proxyPort, backendPort)
 		if err != nil && err != context.DeadlineExceeded && err != context.Canceled {
 			t.Logf("Proxy ended with: %v", err)
 		}
-	}()
+	})
 
 	// Wait a bit for proxy to start
 	time.Sleep(50 * time.Millisecond)
@@ -125,7 +121,7 @@ func TestTCPProxyToLocalhost(t *testing.T) {
 	// Cleanup: cancel contexts and wait for goroutines
 	cancel()
 	backendCancel()
-	
+
 	// Wait for goroutines to finish with timeout
 	done := make(chan struct{})
 	go func() {
@@ -192,11 +188,9 @@ func TestHandleProxyConnection(t *testing.T) {
 
 	// Start handleProxyConnection
 	var proxyWg sync.WaitGroup
-	proxyWg.Add(1)
-	go func() {
-		defer proxyWg.Done()
+	proxyWg.Go(func() {
 		app.handleProxyConnection(proxyCtx, serverConn, backendPort)
-	}()
+	})
 
 	// Test communication
 	testData := "test data"
