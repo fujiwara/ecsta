@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecs/types"
 	"github.com/itchyny/gojq"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 var taskFormatterColumns = []string{
@@ -90,14 +91,19 @@ type taskFormatterTable struct {
 }
 
 func newTaskFormatterTable(w io.Writer, opt formatterOption) (taskFormatter, error) {
+	table := tablewriter.NewTable(w,
+		tablewriter.WithRendition(tw.Rendition{
+			Symbols: tw.NewSymbols(tw.StyleASCII),
+			Borders: tw.Border{Left: tw.On, Top: tw.Off, Right: tw.On, Bottom: tw.Off},
+		}),
+	)
 	t := &taskFormatterTable{
-		table: tablewriter.NewWriter(w),
+		table: table,
 		opt:   &opt,
 	}
 	if opt.HasHeader {
-		t.table.SetHeader(opt.Columns())
+		t.table.Header(opt.Columns())
 	}
-	t.table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	return t, nil
 }
 
