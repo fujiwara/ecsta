@@ -60,13 +60,14 @@ var bootAgentTmpl = template.Must(template.New("").Parse(
 EOF_OF_AGENT_COMMAND
 
 chmod +x {{.Cmd}}
-{{.Cmd}} {{.Port}} {{if .Upload}}>{{else}}<{{end}} "{{.Filename}}"
+{{.Cmd}} {{.Host}}:{{.Port}} {{if .Upload}}>{{else}}<{{end}} "{{.Filename}}"
 '
 `))
 
 type bootAgentTmplData struct {
 	Base64Binary string
 	Cmd          string
+	Host         string
 	Port         int
 	Upload       bool
 	Filename     string
@@ -99,6 +100,7 @@ func (cp *cpTask) bootAgent() string {
 	bootAgentTmpl.Execute(buf, &bootAgentTmplData{
 		Base64Binary: b64,
 		Cmd:          "/tmp/tncl",
+		Host:         "127.0.0.1",
 		Port:         cp.port,
 		Upload:       cp.upload,
 		Filename:     cp.remoteFile,
@@ -209,8 +211,8 @@ func (app *Ecsta) RunCp(ctx context.Context, opt *CpOption) error {
 		for scanner.Scan() {
 			line := scanner.Text()
 			slog.Debug(line)
-			// tncl says "listening on port ..." when ready for connection
-			if !closed && strings.Contains(line, "listening on port") {
+			// tncl says "listening on ..." when ready for connection
+			if !closed && strings.Contains(line, "listening on") {
 				close(ready)
 				closed = true
 			}
