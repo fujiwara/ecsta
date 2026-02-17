@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.8.1](https://github.com/fujiwara/ecsta/compare/v0.8.0...v0.8.1) - 2026-02-17
+- update to tncl v0.0.6 by @fujiwara in https://github.com/fujiwara/ecsta/pull/103
+
 ## [v0.8.0](https://github.com/fujiwara/ecsta/compare/v0.7.4...v0.8.0) - 2026-02-11
 - Update olekukonko/tablewriter to v1 by @fujiwara in https://github.com/fujiwara/ecsta/pull/99
 - Update all dependencies to latest by @fujiwara in https://github.com/fujiwara/ecsta/pull/101
