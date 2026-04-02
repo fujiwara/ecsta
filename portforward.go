@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -58,6 +59,13 @@ func (opt *PortforwardOption) ParseL() error {
 }
 
 func (app *Ecsta) RunPortforward(ctx context.Context, opt *PortforwardOption) error {
+	if opt.stdout == nil {
+		opt.stdout = os.Stdout
+	}
+	if opt.stderr == nil {
+		opt.stderr = os.Stderr
+	}
+
 	if err := opt.ParseL(); err != nil {
 		return err
 	}
