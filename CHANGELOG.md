@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.8.1](https://github.com/fujiwara/ecsta/compare/v0.8.0...v0.8.1) - 2026-04-10
+- update to tncl v0.0.6 by @fujiwara in https://github.com/fujiwara/ecsta/pull/103
+- Fix nil pointer panic in portforward on non-interactive mode by @Shell-Wataru in https://github.com/fujiwara/ecsta/pull/115
+- Combine dependabot updates by @fujiwara in https://github.com/fujiwara/ecsta/pull/118
+- Bump Songmu/tagpr from 1.8.4 to 1.17.1 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/106
+- Bump goreleaser/goreleaser-action from 6.4.0 to 7.0.0 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/107
+- Bump actions/checkout from 5.0.0 to 6.0.2 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/108
+- Bump the aws-sdk-go-v2 group with 5 updates by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/110
+- Bump actions/setup-go from 6.0.0 to 6.4.0 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/111
+- Bump github.com/olekukonko/tablewriter from 1.1.3 to 1.1.4 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/112
+- Bump github.com/samber/lo from 1.52.0 to 1.53.0 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/113
+- Bump github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs from 1.63.1 to 1.65.0 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/116
+- Bump github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream from 1.7.4 to 1.7.8 by @dependabot[bot] in https://github.com/fujiwara/ecsta/pull/117
+
 ## [v0.8.1](https://github.com/fujiwara/ecsta/compare/v0.8.0...v0.8.1) - 2026-02-17
 - update to tncl v0.0.6 by @fujiwara in https://github.com/fujiwara/ecsta/pull/103
 
