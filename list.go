@@ -7,7 +7,7 @@ import (
 
 type ListOption struct {
 	Family     *string           `help:"Task definition family" short:"f"`
-	Service    *string           `help:"Service name" short:"s"`
+	Service    *string           `help:"Service name. When combined with --family, tasks of other services sharing the family are excluded." short:"s"`
 	OutputTags bool              `help:"Output tags of tasks"`
 	Tags       map[string]string `help:"Show only tasks that have specified tags" mapsep:","`
 }

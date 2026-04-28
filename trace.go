@@ -13,7 +13,7 @@ type TraceOption struct {
 	Duration    time.Duration `help:"duration to trace" short:"d" default:"1m"`
 	SNSTopicArn string        `help:"SNS topic ARN"`
 	Family      *string       `help:"task definition family name"`
-	Service     *string       `help:"ECS service name"`
+	Service     *string       `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 	JSON        bool          `help:"output JSON lines" short:"j"`
 }
 

@@ -25,7 +25,7 @@ type PortforwardOption struct {
 	RemoteHost string  `help:"remote host"`
 	L          string  `name:"L" help:"short expression of local-port:remote-host:remote-port" short:"L"`
 	Family     *string `help:"task definition family name"`
-	Service    *string `help:"ECS service name"`
+	Service    *string `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 	Public     bool    `help:"bind to all interfaces (0.0.0.0) instead of localhost only"`
 
 	stdout io.Writer
