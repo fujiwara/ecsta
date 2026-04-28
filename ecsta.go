@@ -83,12 +83,15 @@ func (app *Ecsta) describeTasks(ctx context.Context, opt *optionDescribeTasks) (
 func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.Task, error) {
 	tasks := []types.Task{}
 	var inputs []*ecs.ListTasksInput
+	// ListTasks API does not accept Family and ServiceName at the same time.
+	// When both are specified, query by Family and post-filter to exclude
+	// tasks belonging to other services that share the same family. This
+	// keeps standalone tasks (typically launched by RunTask, e.g. via
+	// `ecspresso run`) of the same family while filtering out tasks of
+	// sibling services.
 	if opt.family != nil && opt.service != nil {
-		// LisTasks does not support family and service at the same time
-		// spilit into two requests
 		inputs = []*ecs.ListTasksInput{
 			{Cluster: &app.cluster, Family: opt.family},
-			{Cluster: &app.cluster, ServiceName: opt.service},
 		}
 	} else {
 		inputs = []*ecs.ListTasksInput{
@@ -121,6 +124,10 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 		}
 	}
 
+	if opt.family != nil && opt.service != nil {
+		tasks = filterTasksByService(tasks, aws.ToString(opt.service))
+	}
+
 	// filter by tags
 	if len(opt.tags) > 0 {
 		tasks = lo.Filter(tasks, func(task types.Task, i int) bool {
@@ -141,6 +148,22 @@ func (app *Ecsta) listTasks(ctx context.Context, opt *optionListTasks) ([]types.
 	return lo.UniqBy(tasks, func(task types.Task) string {
 		return aws.ToString(task.TaskArn)
 	}), nil
+}
+
+// filterTasksByService keeps tasks that belong to the specified service or are
+// not associated with any service (e.g. tasks launched via RunTask). Tasks
+// associated with other services are excluded. Service association is detected
+// by the task's Group field; service-launched tasks have a group of the form
+// "service:<service-name>".
+func filterTasksByService(tasks []types.Task, service string) []types.Task {
+	wantGroup := "service:" + service
+	return lo.Filter(tasks, func(task types.Task, _ int) bool {
+		g := aws.ToString(task.Group)
+		if strings.HasPrefix(g, "service:") {
+			return g == wantGroup
+		}
+		return true
+	})
 }
 
 func (app *Ecsta) listClusters(ctx context.Context) ([]string, error) {

@@ -25,7 +25,7 @@ type ExecOption struct {
 	Command   string  `help:"command to execute" default:"sh"`
 	Container string  `help:"container name"`
 	Family    *string `help:"task definition family name"`
-	Service   *string `help:"ECS service name"`
+	Service   *string `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 
 	catchSignal bool
 	stdout      io.Writer

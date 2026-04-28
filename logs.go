@@ -28,7 +28,7 @@ type LogsOption struct {
 	Follow    bool          `help:"follow logs" short:"f"`
 	Container string        `help:"container name"`
 	Family    *string       `help:"task definition family name"`
-	Service   *string       `help:"ECS service name"`
+	Service   *string       `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 	JSON      bool          `help:"output as JSON lines" short:"j"`
 }
 

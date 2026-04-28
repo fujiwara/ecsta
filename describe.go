@@ -8,7 +8,7 @@ import (
 type DescribeOption struct {
 	ID      string  `help:"task ID"`
 	Family  *string `help:"task definition family name"`
-	Service *string `help:"ECS service name"`
+	Service *string `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 }
 
 func (app *Ecsta) RunDescribe(ctx context.Context, opt *DescribeOption) error {

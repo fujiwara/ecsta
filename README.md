@@ -106,6 +106,18 @@ $ ecsta list --cluster foo --output-tags --tags Env=prod
 | 4deeb701c49a4892b7de39a2d0df17e0 | ecspresso-test:499 |          | RUNNING    | RUNNING       | 2022-08-06T00:12:50+09:00 | service:nginx-local | FARGATE | Env=prod,Name=nginx-local |
 ```
 
+#### Filtering tasks by family and service
+
+The `--family` and `--service` flags are accepted by `list`, `describe`, `exec`, `portforward`, `cp`, `stop`, `trace`, and `logs`.
+
+The AWS `ListTasks` API does not allow `family` and `serviceName` to be specified at the same time. When both flags are passed to ecsta, tasks are listed by `family` and then post-filtered as follows:
+
+- Tasks belonging to the specified service are kept.
+- Tasks not associated with any service (typically launched via `RunTask`, e.g. `ecspresso run`) of the same family are kept.
+- Tasks belonging to other services that share the family are excluded.
+
+This is useful when several ECS services share a single task definition family: passing both `--family` and `--service` returns only the tasks that belong to the specified service plus its standalone runs.
+
 ### Describe task
 
 ```

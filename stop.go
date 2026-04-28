@@ -13,7 +13,7 @@ type StopOption struct {
 	ID      string  `help:"task ID"`
 	Force   bool    `help:"stop without confirmation"`
 	Family  *string `help:"task definition family name"`
-	Service *string `help:"ECS service name"`
+	Service *string `help:"ECS service name. When combined with --family, tasks of other services sharing the family are excluded."`
 }
 
 func (app *Ecsta) RunStop(ctx context.Context, opt *StopOption) error {
