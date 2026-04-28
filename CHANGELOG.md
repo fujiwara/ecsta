@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.8.2](https://github.com/fujiwara/ecsta/compare/v0.8.1...v0.8.2) - 2026-04-28
+- fix: exclude sibling services' tasks when both --family and --service are specified by @fujiwara in https://github.com/fujiwara/ecsta/pull/119
+
 ## [v0.8.1](https://github.com/fujiwara/ecsta/compare/v0.8.0...v0.8.1) - 2026-04-10
 - update to tncl v0.0.6 by @fujiwara in https://github.com/fujiwara/ecsta/pull/103
 - Fix nil pointer panic in portforward on non-interactive mode by @Shell-Wataru in https://github.com/fujiwara/ecsta/pull/115
