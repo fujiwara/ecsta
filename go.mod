@@ -16,7 +16,7 @@ require (
 	github.com/fujiwara/tracer v1.1.3
 	github.com/google/go-cmp v0.7.0
 	github.com/itchyny/gojq v0.12.19
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/samber/lo v1.53.0
 	github.com/schollz/progressbar/v3 v3.19.0
