@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: Songmu/tagpr@9d0f650553240dab1fa907eca27e3fd5b586e538 # v1.18.1
+      - uses: Songmu/tagpr@e84001bd5dac8defa0c75b3913937d284a3b3660 # v1.20.0
         id: tagpr
         if: ${{ github.event_name != 'workflow_dispatch' }} # skip on workflow_dispatch
 
