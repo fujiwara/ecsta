@@ -16,10 +16,10 @@ require (
 	github.com/fujiwara/tracer v1.1.3
 	github.com/google/go-cmp v0.7.0
 	github.com/itchyny/gojq v0.12.19
-	github.com/mattn/go-isatty v0.0.21
+	github.com/mattn/go-isatty v0.0.22
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/samber/lo v1.53.0
-	github.com/schollz/progressbar/v3 v3.19.0
+	github.com/schollz/progressbar/v3 v3.19.1
 	github.com/tkuchiki/parsetime v0.3.0
 )
 
@@ -52,7 +52,7 @@ require (
 	github.com/olekukonko/ll v0.1.8 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/tkuchiki/go-timezone v0.2.3 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/term v0.42.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 )
