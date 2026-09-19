@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.8.3](https://github.com/fujiwara/ecsta/compare/v0.8.2...v0.8.3) - 2026-09-19
+- Rename CLAUDE.md to AGENTS.md by @fujiwara in https://github.com/fujiwara/ecsta/pull/131
+
 ## [v0.8.2](https://github.com/fujiwara/ecsta/compare/v0.8.1...v0.8.2) - 2026-04-28
 - fix: exclude sibling services' tasks when both --family and --service are specified by @fujiwara in https://github.com/fujiwara/ecsta/pull/119
 
